@@ -21,6 +21,7 @@ import {
 	loadPersistedGameState,
 	savePersistedGameState,
 } from '../storage'
+import { isPersistedSessionCompatible } from '../storage/sessionCompatibility'
 
 export type TrainingStep = 'pick-source' | 'pick-destination' | 'encourage' | 'done'
 
@@ -158,8 +159,12 @@ export function useCampaignGame(): CampaignGameController {
 			setCampaignComplete(saved.campaignComplete)
 			setTutorialCompleted(saved.tutorialCompleted)
 
-			if (saved.session && saved.session.levelNumber === saved.currentLevel) {
-				const level = createCampaignLevel(saved.session.levelNumber)
+			const level = createCampaignLevel(saved.currentLevel)
+			if (
+				saved.session &&
+				saved.session.levelNumber === saved.currentLevel &&
+				isPersistedSessionCompatible(saved.session, level)
+			) {
 				hydrateLevel(level, {
 					currentBoard: saved.session.currentBoard,
 					moveHistory: saved.session.moveHistory,
@@ -167,7 +172,6 @@ export function useCampaignGame(): CampaignGameController {
 					tutorialDone: saved.tutorialCompleted,
 				})
 			} else {
-				const level = createCampaignLevel(saved.currentLevel)
 				hydrateLevel(level, { tutorialDone: saved.tutorialCompleted })
 			}
 

@@ -7,6 +7,15 @@ import {
 	type CampaignDifficultyBand,
 } from '../campaign'
 import {
+	hapticInvalid,
+	hapticPour,
+	hapticSelection,
+	hapticSuccess,
+	playPourSound,
+	playWinSound,
+	setSoundsEnabled,
+} from '../feedback'
+import {
 	applyMove,
 	canPour,
 	cloneBoard,
@@ -16,14 +25,30 @@ import {
 	type Move,
 } from '../game'
 import {
+	DEFAULT_GAME_SETTINGS,
+	getPourAnimationMs,
+	type AnimationSpeed,
+	type GameSettings,
+} from '../settings'
+import {
 	STORAGE_SCHEMA_VERSION,
 	createDefaultPersistedState,
 	loadPersistedGameState,
 	savePersistedGameState,
 } from '../storage'
 import { isPersistedSessionCompatible } from '../storage/sessionCompatibility'
+import type { PaletteMode } from '../theme'
 
 export type TrainingStep = 'pick-source' | 'pick-destination' | 'encourage' | 'done'
+
+/** Cosmetic pour signal — never mutates Water Sort rules by itself. */
+export interface PourAnimation {
+	from: number
+	to: number
+	/** 0..1 progress for tube tilt / highlight. */
+	startedAt: number
+	durationMs: number
+}
 
 export interface CampaignGameController {
 	ready: boolean
@@ -38,6 +63,7 @@ export interface CampaignGameController {
 	hintMove: Move | null
 	hintMessage: string | null
 	invalidFlashIndex: number | null
+	pourAnimation: PourAnimation | null
 	isLevelSolved: boolean
 	showCampaignFinished: boolean
 	campaignComplete: boolean
@@ -46,6 +72,9 @@ export interface CampaignGameController {
 	highestUnlockedLevel: number
 	canUndo: boolean
 	toastMessage: string | null
+	settings: GameSettings
+	updateSettings: (patch: Partial<GameSettings>) => void
+	replayTutorial: () => void
 	handleTubePress: (index: number) => void
 	handleUndo: () => void
 	handleRestart: () => void
@@ -58,7 +87,7 @@ export interface CampaignGameController {
 }
 
 /**
- * Campaign gameplay controller: production engine + persistence + UI state.
+ * Campaign gameplay controller: production engine + persistence + UX chrome.
  * Pure Water Sort rules live only in src/game — this hook never reimplements them.
  */
 export function useCampaignGame(): CampaignGameController {
@@ -67,6 +96,7 @@ export function useCampaignGame(): CampaignGameController {
 	const [campaignComplete, setCampaignComplete] = useState(false)
 	const [tutorialCompleted, setTutorialCompleted] = useState(false)
 	const [showCampaignFinished, setShowCampaignFinished] = useState(false)
+	const [settings, setSettings] = useState<GameSettings>({ ...DEFAULT_GAME_SETTINGS })
 
 	const [levelNumber, setLevelNumber] = useState(1)
 	const [difficultyBand, setDifficultyBand] = useState<CampaignDifficultyBand>('BEGINNER')
@@ -79,16 +109,20 @@ export function useCampaignGame(): CampaignGameController {
 	const [hintMove, setHintMove] = useState<Move | null>(null)
 	const [hintMessage, setHintMessage] = useState<string | null>(null)
 	const [invalidFlashIndex, setInvalidFlashIndex] = useState<number | null>(null)
+	const [pourAnimation, setPourAnimation] = useState<PourAnimation | null>(null)
 	const [trainingStep, setTrainingStep] = useState<TrainingStep>('done')
 	const [toastMessage, setToastMessage] = useState<string | null>(null)
 	const [isLevelSolved, setIsLevelSolved] = useState(false)
 
 	const flashTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 	const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+	const pourTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 	const persistEnabledRef = useRef(false)
 	const tutorialCompletedRef = useRef(false)
 	const highestUnlockedRef = useRef(1)
 	const campaignCompleteRef = useRef(false)
+	const settingsRef = useRef<GameSettings>({ ...DEFAULT_GAME_SETTINGS })
+	const animatingRef = useRef(false)
 
 	const showToast = useCallback((message: string) => {
 		if (toastTimerRef.current) clearTimeout(toastTimerRef.current)
@@ -100,6 +134,7 @@ export function useCampaignGame(): CampaignGameController {
 	}, [])
 
 	const flashInvalid = useCallback((tubeIndex: number) => {
+		void hapticInvalid(settingsRef.current.hapticsEnabled)
 		if (flashTimerRef.current) clearTimeout(flashTimerRef.current)
 		setInvalidFlashIndex(tubeIndex)
 		flashTimerRef.current = setTimeout(() => {
@@ -107,6 +142,39 @@ export function useCampaignGame(): CampaignGameController {
 			flashTimerRef.current = null
 		}, 220)
 	}, [])
+
+	const clearPourAnimation = useCallback(() => {
+		if (pourTimerRef.current) {
+			clearTimeout(pourTimerRef.current)
+			pourTimerRef.current = null
+		}
+		animatingRef.current = false
+		setPourAnimation(null)
+	}, [])
+
+	const startPourAnimation = useCallback(
+		(from: number, to: number, speed: AnimationSpeed) => {
+			const { total } = getPourAnimationMs(speed)
+			if (total <= 0) {
+				clearPourAnimation()
+				return
+			}
+			animatingRef.current = true
+			setPourAnimation({
+				from,
+				to,
+				startedAt: Date.now(),
+				durationMs: total,
+			})
+			if (pourTimerRef.current) clearTimeout(pourTimerRef.current)
+			pourTimerRef.current = setTimeout(() => {
+				animatingRef.current = false
+				setPourAnimation(null)
+				pourTimerRef.current = null
+			}, total)
+		},
+		[clearPourAnimation],
+	)
 
 	const hydrateLevel = useCallback(
 		(
@@ -123,6 +191,7 @@ export function useCampaignGame(): CampaignGameController {
 			const moves = options?.moveCount ?? 0
 			const tutorialDone = options?.tutorialDone ?? tutorialCompletedRef.current
 
+			clearPourAnimation()
 			setLevelNumber(level.levelNumber)
 			setDifficultyBand(level.campaignBand)
 			setSeed(String(level.seed))
@@ -142,10 +211,9 @@ export function useCampaignGame(): CampaignGameController {
 				setTrainingStep('done')
 			}
 		},
-		[],
+		[clearPourAnimation],
 	)
 
-	// Boot once: restore mid-level session or open current campaign level.
 	useEffect(() => {
 		let cancelled = false
 		;(async () => {
@@ -155,9 +223,12 @@ export function useCampaignGame(): CampaignGameController {
 			highestUnlockedRef.current = saved.highestUnlockedLevel
 			campaignCompleteRef.current = saved.campaignComplete
 			tutorialCompletedRef.current = saved.tutorialCompleted
+			settingsRef.current = saved.settings
 			setHighestUnlockedLevel(saved.highestUnlockedLevel)
 			setCampaignComplete(saved.campaignComplete)
 			setTutorialCompleted(saved.tutorialCompleted)
+			setSettings(saved.settings)
+			setSoundsEnabled(saved.settings.soundsEnabled)
 
 			const level = createCampaignLevel(saved.currentLevel)
 			if (
@@ -183,7 +254,6 @@ export function useCampaignGame(): CampaignGameController {
 		}
 	}, [hydrateLevel])
 
-	// Persist mid-level progress (and meta flags) after gameplay changes.
 	useEffect(() => {
 		if (!ready || !persistEnabledRef.current || initialBoard.length === 0) {
 			return
@@ -194,6 +264,7 @@ export function useCampaignGame(): CampaignGameController {
 			highestUnlockedLevel: highestUnlockedRef.current,
 			campaignComplete: campaignCompleteRef.current,
 			tutorialCompleted: tutorialCompletedRef.current,
+			settings: settingsRef.current,
 			session: {
 				levelNumber,
 				seed,
@@ -216,11 +287,29 @@ export function useCampaignGame(): CampaignGameController {
 		highestUnlockedLevel,
 		campaignComplete,
 		tutorialCompleted,
+		settings,
 	])
+
+	const updateSettings = useCallback((patch: Partial<GameSettings>) => {
+		const next = { ...settingsRef.current, ...patch }
+		settingsRef.current = next
+		setSettings(next)
+		if (patch.soundsEnabled !== undefined) {
+			setSoundsEnabled(patch.soundsEnabled)
+		}
+	}, [])
+
+	const replayTutorial = useCallback(() => {
+		// Only clears tutorial completion — keeps unlocks, session, and settings.
+		tutorialCompletedRef.current = false
+		setTutorialCompleted(false)
+		const level = createCampaignLevel(1)
+		hydrateLevel(level, { tutorialDone: false })
+	}, [hydrateLevel])
 
 	const handleTubePress = useCallback(
 		(index: number) => {
-			if (isLevelSolved) return
+			if (isLevelSolved || animatingRef.current) return
 
 			if (selectedTube === null) {
 				const tube = currentBoard[index]
@@ -228,6 +317,7 @@ export function useCampaignGame(): CampaignGameController {
 					flashInvalid(index)
 					return
 				}
+				void hapticSelection(settingsRef.current.hapticsEnabled)
 				setSelectedTube(index)
 				setHintMove(null)
 				setHintMessage(null)
@@ -252,6 +342,7 @@ export function useCampaignGame(): CampaignGameController {
 				return
 			}
 
+			// Authoritative state update first — animation is cosmetic only.
 			const previous = cloneBoard(currentBoard)
 			const nextBoard = applyMove(currentBoard, move)
 			setMoveHistory((history) => [...history, previous])
@@ -261,12 +352,18 @@ export function useCampaignGame(): CampaignGameController {
 			setHintMove(null)
 			setHintMessage(null)
 
+			void hapticPour(settingsRef.current.hapticsEnabled)
+			void playPourSound()
+			startPourAnimation(move.from, move.to, settingsRef.current.animationSpeed)
+
 			if (trainingStep === 'pick-destination' || trainingStep === 'pick-source') {
 				setTrainingStep('encourage')
 			}
 
 			if (isSolved(nextBoard)) {
 				setIsLevelSolved(true)
+				void hapticSuccess(settingsRef.current.hapticsEnabled)
+				void playWinSound()
 				const unlocked = nextUnlockAfterClearing(
 					levelNumber,
 					highestUnlockedRef.current,
@@ -291,11 +388,15 @@ export function useCampaignGame(): CampaignGameController {
 			isLevelSolved,
 			levelNumber,
 			selectedTube,
+			startPourAnimation,
 			trainingStep,
 		],
 	)
 
 	const handleUndo = useCallback(() => {
+		if (animatingRef.current) {
+			clearPourAnimation()
+		}
 		if (moveHistory.length === 0) {
 			showToast('Нечего отменять')
 			return
@@ -310,9 +411,10 @@ export function useCampaignGame(): CampaignGameController {
 		setHintMove(null)
 		setHintMessage(null)
 		setIsLevelSolved(false)
-	}, [moveHistory, showToast])
+	}, [clearPourAnimation, moveHistory, showToast])
 
 	const handleRestart = useCallback(() => {
+		clearPourAnimation()
 		setCurrentBoard(cloneBoard(initialBoard))
 		setMoveHistory([])
 		setMoveCount(0)
@@ -323,7 +425,7 @@ export function useCampaignGame(): CampaignGameController {
 		if (levelNumber === 1 && !tutorialCompletedRef.current) {
 			setTrainingStep('pick-source')
 		}
-	}, [initialBoard, levelNumber])
+	}, [clearPourAnimation, initialBoard, levelNumber])
 
 	const shouldConfirmRestart = useCallback(() => {
 		if (moveCount === 0) return false
@@ -395,6 +497,7 @@ export function useCampaignGame(): CampaignGameController {
 		hintMove,
 		hintMessage,
 		invalidFlashIndex,
+		pourAnimation,
 		isLevelSolved,
 		showCampaignFinished,
 		campaignComplete,
@@ -403,6 +506,9 @@ export function useCampaignGame(): CampaignGameController {
 		highestUnlockedLevel,
 		canUndo: moveHistory.length > 0,
 		toastMessage,
+		settings,
+		updateSettings,
+		replayTutorial,
 		handleTubePress,
 		handleUndo,
 		handleRestart,
@@ -415,5 +521,5 @@ export function useCampaignGame(): CampaignGameController {
 	}
 }
 
-// Keep default factory available for cold-start helpers/tests.
+export type { AnimationSpeed, PaletteMode }
 export { createDefaultPersistedState }

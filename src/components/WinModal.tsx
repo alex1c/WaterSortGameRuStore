@@ -1,4 +1,5 @@
-import { Modal, Pressable, StyleSheet, Text, View } from 'react-native'
+import { useEffect, useState } from 'react'
+import { Animated, Modal, Pressable, StyleSheet, Text, View } from 'react-native'
 
 import { spacing, uiColors } from '../theme'
 
@@ -13,7 +14,8 @@ interface WinModalProps {
 }
 
 /**
- * Clean level-complete sheet. No advertising inside the dialog.
+ * Clean level-complete sheet with a short restrained celebration.
+ * No advertising, loot, or currency.
  */
 export function WinModal({
 	visible,
@@ -24,10 +26,44 @@ export function WinModal({
 	onNext,
 	onReplay,
 }: WinModalProps) {
+	const [pop] = useState(() => new Animated.Value(0.92))
+	const [glow] = useState(() => new Animated.Value(0))
+
+	useEffect(() => {
+		if (!visible) return
+		pop.setValue(0.92)
+		glow.setValue(0)
+		Animated.parallel([
+			Animated.spring(pop, {
+				toValue: 1,
+				friction: 6,
+				tension: 120,
+				useNativeDriver: true,
+			}),
+			Animated.timing(glow, {
+				toValue: 1,
+				duration: 420,
+				useNativeDriver: true,
+			}),
+		]).start()
+	}, [visible, pop, glow])
+
 	return (
 		<Modal visible={visible} transparent animationType="fade">
 			<View style={styles.backdrop} testID="win-modal">
-				<View style={styles.card}>
+				<Animated.View
+					style={[
+						styles.card,
+						{
+							transform: [{ scale: pop }],
+							opacity: glow.interpolate({
+								inputRange: [0, 1],
+								outputRange: [0.85, 1],
+							}),
+						},
+					]}
+				>
+					<Text style={styles.emoji}>✓</Text>
 					<Text style={styles.title}>Уровень пройден!</Text>
 					<Text style={styles.meta}>Ходов: {moveCount}</Text>
 					<Text style={styles.meta}>Сложность: {difficultyLabel}</Text>
@@ -56,7 +92,7 @@ export function WinModal({
 					{!isFinalCampaignLevel ? (
 						<Text style={styles.levelNote}>Уровень {levelNumber}</Text>
 					) : null}
-				</View>
+				</Animated.View>
 			</View>
 		</Modal>
 	)
@@ -73,11 +109,25 @@ const styles = StyleSheet.create({
 	card: {
 		width: '100%',
 		maxWidth: 360,
-		borderRadius: 16,
+		borderRadius: 18,
 		backgroundColor: uiColors.surface,
 		paddingHorizontal: spacing.lg,
 		paddingVertical: spacing.xl,
 		gap: spacing.sm,
+	},
+	emoji: {
+		alignSelf: 'center',
+		width: 44,
+		height: 44,
+		borderRadius: 22,
+		overflow: 'hidden',
+		textAlign: 'center',
+		lineHeight: 44,
+		fontSize: 22,
+		fontWeight: '800',
+		color: '#FFFFFF',
+		backgroundColor: uiColors.winAccent,
+		marginBottom: spacing.xs,
 	},
 	title: {
 		fontSize: 22,

@@ -20,19 +20,20 @@ import { uiColors } from '../theme'
 
 interface GameScreenProps {
 	onOpenLevels: () => void
+	onOpenSettings: () => void
 }
 
 /**
- * Phase 3 campaign gameplay screen.
+ * Campaign gameplay screen with polished tubes and pour feedback.
  *
- * Vertical stack (top → bottom), no absolute physical-bottom pinning:
+ * Vertical stack (top → bottom):
  *   header + training hint
  *   → flexible game board
  *   → bottom controls
  *   → AdBannerPlaceholder (50px)
  *   → real device bottom safe-area inset
  */
-export function GameScreen({ onOpenLevels }: GameScreenProps) {
+export function GameScreen({ onOpenLevels, onOpenSettings }: GameScreenProps) {
 	const insets = useSafeAreaInsets()
 	const game = useSharedCampaignGame()
 	const [boardArea, setBoardArea] = useState({ width: 0, height: 0 })
@@ -79,6 +80,7 @@ export function GameScreen({ onOpenLevels }: GameScreenProps) {
 				difficultyLabel={game.difficultyLabel}
 				moveCount={game.moveCount}
 				onOpenLevels={onOpenLevels}
+				onOpenSettings={onOpenSettings}
 			/>
 			<TrainingHint step={game.trainingStep} />
 
@@ -95,6 +97,8 @@ export function GameScreen({ onOpenLevels }: GameScreenProps) {
 							selectedIndex={game.selectedTube}
 							invalidFlashIndex={game.invalidFlashIndex}
 							hintMove={game.hintMove}
+							pourAnimation={game.pourAnimation}
+							colorMode={game.settings.colorMode}
 							onTubePress={game.handleTubePress}
 							availableWidth={boardArea.width}
 							availableHeight={boardArea.height}
@@ -176,7 +180,7 @@ const styles = StyleSheet.create({
 		paddingHorizontal: 14,
 		paddingVertical: 6,
 		borderRadius: 8,
-		backgroundColor: 'rgba(242, 161, 0, 0.92)',
+		backgroundColor: 'rgba(232, 163, 23, 0.94)',
 	},
 	hintBannerText: {
 		color: '#1A2B33',

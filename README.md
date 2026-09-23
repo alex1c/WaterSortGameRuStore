@@ -52,11 +52,11 @@ src/
 scripts/
 ```
 
-## Bottom layout (mandatory)
+## Settings (Phase 5)
 
-```text
-GAME CONTENT
-→ BOTTOM CONTROLS
-→ AdBannerPlaceholder (50px)
-→ REAL ANDROID SAFE AREA
-```
+- Animation speed: Обычная / Быстрая / Мгновенная
+- Haptics + Sounds toggles
+- Color modes: normal / high contrast / colors + symbols
+- Replay Level 1 training without resetting campaign progress
+
+Sound SFX assets are not bundled yet (toggle + API ready).

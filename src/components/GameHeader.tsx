@@ -7,35 +7,59 @@ interface GameHeaderProps {
 	difficultyLabel: string
 	moveCount: number
 	onOpenLevels: () => void
+	onOpenSettings: () => void
 }
 
 /**
- * Compact campaign header — level, difficulty, move count.
+ * Compact header — level / difficulty / moves plus levels + settings access.
  */
 export function GameHeader({
 	levelNumber,
 	difficultyLabel,
 	moveCount,
 	onOpenLevels,
+	onOpenSettings,
 }: GameHeaderProps) {
 	return (
 		<View style={styles.container} testID="game-header">
 			<View style={styles.textBlock}>
 				<Text style={styles.title}>Уровень {levelNumber}</Text>
 				<Text style={styles.subtitle}>
-					{difficultyLabel} · {moveCount}{' '}
-					{pluralMoves(moveCount)}
+					{difficultyLabel} · {moveCount} {pluralMoves(moveCount)}
 				</Text>
 			</View>
-			<Pressable
-				accessibilityRole="button"
-				accessibilityLabel="Выбор уровня"
-				onPress={onOpenLevels}
-				style={({ pressed }) => [styles.levelsButton, pressed && styles.pressed]}
-			>
-				<Text style={styles.levelsLabel}>Уровни</Text>
-			</Pressable>
+			<View style={styles.actions}>
+				<HeaderButton label="Уровни" onPress={onOpenLevels} />
+				<HeaderButton label="☰" accessibilityLabel="Настройки" onPress={onOpenSettings} compact />
+			</View>
 		</View>
+	)
+}
+
+function HeaderButton({
+	label,
+	onPress,
+	accessibilityLabel,
+	compact = false,
+}: {
+	label: string
+	onPress: () => void
+	accessibilityLabel?: string
+	compact?: boolean
+}) {
+	return (
+		<Pressable
+			accessibilityRole="button"
+			accessibilityLabel={accessibilityLabel ?? label}
+			onPress={onPress}
+			style={({ pressed }) => [
+				styles.button,
+				compact && styles.buttonCompact,
+				pressed && styles.pressed,
+			]}
+		>
+			<Text style={styles.buttonLabel}>{label}</Text>
+		</Pressable>
 	)
 }
 
@@ -70,7 +94,12 @@ const styles = StyleSheet.create({
 		fontSize: 13,
 		color: uiColors.textSecondary,
 	},
-	levelsButton: {
+	actions: {
+		flexDirection: 'row',
+		alignItems: 'center',
+		gap: spacing.sm,
+	},
+	button: {
 		minHeight: 40,
 		paddingHorizontal: spacing.md,
 		borderRadius: 10,
@@ -80,10 +109,14 @@ const styles = StyleSheet.create({
 		alignItems: 'center',
 		justifyContent: 'center',
 	},
+	buttonCompact: {
+		minWidth: 40,
+		paddingHorizontal: spacing.sm,
+	},
 	pressed: {
 		backgroundColor: uiColors.controlPressed,
 	},
-	levelsLabel: {
+	buttonLabel: {
 		fontSize: 13,
 		fontWeight: '600',
 		color: uiColors.textPrimary,

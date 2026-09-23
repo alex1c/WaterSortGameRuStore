@@ -1,37 +1,41 @@
 import type { ColorId } from '../game/types'
 
 /**
- * Palette modes prepared for a future accessibility feature.
- * Keep hex values centralized — components must not scatter raw colors.
+ * Palette modes for accessibility.
+ * Keep hex / symbols centralized — components must not scatter raw colors.
  */
 export type PaletteMode = 'normal' | 'highContrast' | 'patterned'
 
 /** Semantic UI colors unrelated to liquid identity. */
 export const uiColors = {
-	background: '#E8F4F8',
+	background: '#EAF6F4',
+	backgroundAccent: '#D7EFEA',
 	surface: '#FFFFFF',
-	surfaceMuted: '#D7E8EE',
-	textPrimary: '#1A2B33',
-	textSecondary: '#4A6570',
-	border: '#9BB8C4',
-	tubeGlass: 'rgba(255, 255, 255, 0.55)',
-	tubeOutline: '#5A7A88',
+	surfaceMuted: '#D9EBE7',
+	textPrimary: '#17333A',
+	textSecondary: '#4A6B72',
+	border: '#9BB8B8',
+	tubeGlass: 'rgba(255, 255, 255, 0.42)',
+	tubeGlassInner: 'rgba(255, 255, 255, 0.18)',
+	tubeOutline: '#5A7A80',
+	tubeRim: 'rgba(255, 255, 255, 0.75)',
 	tubeSelected: '#2F80ED',
-	tubeHintSource: '#F2A100',
-	tubeHintDestination: '#2E9E6A',
+	tubeHintSource: '#E8A317',
+	tubeHintDestination: '#1F9E6A',
 	tubeInvalidFlash: '#E05A5A',
 	controlBackground: '#FFFFFF',
-	controlBorder: '#7FA3B0',
-	controlPressed: '#D0E4EC',
+	controlBorder: '#7FA3A8',
+	controlPressed: '#CDE4DF',
 	controlDisabled: '#B7C7CE',
 	bannerBackground: '#C9D8DE',
 	bannerText: '#3A5058',
-	hintBackground: 'rgba(255, 255, 255, 0.92)',
-	shadow: 'rgba(26, 43, 51, 0.18)',
-	overlay: 'rgba(15, 28, 34, 0.45)',
+	hintBackground: 'rgba(255, 255, 255, 0.94)',
+	shadow: 'rgba(23, 51, 58, 0.16)',
+	overlay: 'rgba(15, 28, 34, 0.48)',
 	locked: '#A0B4BC',
 	unlocked: '#2F80ED',
-	completed: '#2E9E6A',
+	completed: '#1F9E6A',
+	winAccent: '#2E9E6A',
 } as const
 
 /**
@@ -42,7 +46,7 @@ const GENERATED_NORMAL = [
 	'#E53935',
 	'#1E88E5',
 	'#43A047',
-	'#FDD835',
+	'#F9A825',
 	'#8E24AA',
 	'#FB8C00',
 	'#00897B',
@@ -68,7 +72,12 @@ const GENERATED_HIGH_CONTRAST = [
 	'#0000AA',
 ] as const
 
-/** Legacy named sample colors kept for any remaining fixtures. */
+/**
+ * Stable distinguishing symbols for patterned mode (ColorId → glyph).
+ * Readable on Expert 6+6 layouts; not part of game engine semantics.
+ */
+const GENERATED_SYMBOLS = ['●', '▲', '◆', '■', '★', '+', '○', '▼', '◇', '□', '✦', '×'] as const
+
 const namedNormal: Record<string, string> = {
 	red: GENERATED_NORMAL[0],
 	blue: GENERATED_NORMAL[1],
@@ -91,14 +100,30 @@ const namedHighContrast: Record<string, string> = {
 	pink: GENERATED_HIGH_CONTRAST[7],
 }
 
+const namedSymbols: Record<string, string> = {
+	red: GENERATED_SYMBOLS[0],
+	blue: GENERATED_SYMBOLS[1],
+	green: GENERATED_SYMBOLS[2],
+	yellow: GENERATED_SYMBOLS[3],
+	purple: GENERATED_SYMBOLS[4],
+	orange: GENERATED_SYMBOLS[5],
+	teal: GENERATED_SYMBOLS[6],
+	pink: GENERATED_SYMBOLS[7],
+}
+
+function colorIndex(colorId: ColorId): number | null {
+	const match = /^color-(\d+)$/.exec(colorId)
+	if (!match) return null
+	const index = Number(match[1]) - 1
+	return index >= 0 ? index : null
+}
+
 function resolveGenerated(
 	colorId: ColorId,
 	palette: readonly string[],
 ): string | undefined {
-	const match = /^color-(\d+)$/.exec(colorId)
-	if (!match) return undefined
-	const index = Number(match[1]) - 1
-	if (index < 0) return undefined
+	const index = colorIndex(colorId)
+	if (index === null) return undefined
 	return palette[index % palette.length]
 }
 
@@ -107,11 +132,18 @@ export function getLiquidColor(
 	colorId: ColorId,
 	mode: PaletteMode = 'normal',
 ): string {
-	if (mode === 'highContrast') {
-		return (
+	if (mode === 'highContrast' || mode === 'patterned') {
+		// Patterned keeps strong fills plus an overlaid symbol.
+		const high =
 			resolveGenerated(colorId, GENERATED_HIGH_CONTRAST) ??
-			namedHighContrast[colorId] ??
-			'#111111'
+			namedHighContrast[colorId]
+		if (mode === 'highContrast') {
+			return high ?? '#111111'
+		}
+		return (
+			resolveGenerated(colorId, GENERATED_NORMAL) ??
+			namedNormal[colorId] ??
+			'#607D8B'
 		)
 	}
 	return (
@@ -121,16 +153,34 @@ export function getLiquidColor(
 	)
 }
 
-/** Optional future symbol/pattern key per color (stub for a11y). */
+/**
+ * Stable symbol for patterned accessibility mode.
+ * Same ColorId always maps to the same glyph.
+ */
+export function getLiquidSymbol(colorId: ColorId): string {
+	const index = colorIndex(colorId)
+	if (index !== null) {
+		return GENERATED_SYMBOLS[index % GENERATED_SYMBOLS.length]!
+	}
+	return namedSymbols[colorId] ?? '•'
+}
+
+/** @deprecated Prefer getLiquidSymbol — kept for older call sites. */
 export function getLiquidPatternKey(
 	colorId: ColorId,
 	_mode: PaletteMode = 'patterned',
 ): string {
-	return colorId
+	return getLiquidSymbol(colorId)
+}
+
+export function shouldShowLiquidSymbols(mode: PaletteMode): boolean {
+	return mode === 'patterned'
 }
 
 export const palette = {
 	ui: uiColors,
 	getLiquidColor,
+	getLiquidSymbol,
 	getLiquidPatternKey,
+	shouldShowLiquidSymbols,
 } as const

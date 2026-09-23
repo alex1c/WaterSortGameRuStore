@@ -1,8 +1,10 @@
 import type { Board } from '../game/types'
 import { isValidBoard } from '../game/core'
 import { CAMPAIGN_LEVEL_COUNT } from '../campaign/config'
+import { parseGameSettings } from '../settings/parse'
 import {
 	STORAGE_SCHEMA_VERSION,
+	LEGACY_STORAGE_SCHEMA_VERSION,
 	createDefaultPersistedState,
 	type PersistedGameState,
 	type PersistedLevelSession,
@@ -11,7 +13,7 @@ import {
 /**
  * Pure parser used by tests and the async loader.
  * Never throws — returns defaults on any structural problem.
- * Kept free of AsyncStorage so Jest can import it without native mocks.
+ * Accepts schema v1 (migrates) and schema v2.
  */
 export function parsePersistedGameState(raw: string): PersistedGameState {
 	const fallback = createDefaultPersistedState()
@@ -21,7 +23,11 @@ export function parsePersistedGameState(raw: string): PersistedGameState {
 			return fallback
 		}
 		const record = data as Record<string, unknown>
-		if (record.schemaVersion !== STORAGE_SCHEMA_VERSION) {
+		const schemaVersion = record.schemaVersion
+		if (
+			schemaVersion !== STORAGE_SCHEMA_VERSION &&
+			schemaVersion !== LEGACY_STORAGE_SCHEMA_VERSION
+		) {
 			return fallback
 		}
 
@@ -34,6 +40,7 @@ export function parsePersistedGameState(raw: string): PersistedGameState {
 		const campaignComplete = record.campaignComplete === true
 		const tutorialCompleted = record.tutorialCompleted === true
 		const session = parseSession(record.session)
+		const settings = parseGameSettings(record.settings)
 
 		return {
 			schemaVersion: STORAGE_SCHEMA_VERSION,
@@ -42,6 +49,7 @@ export function parsePersistedGameState(raw: string): PersistedGameState {
 			campaignComplete,
 			tutorialCompleted,
 			session,
+			settings,
 		}
 	} catch {
 		return fallback

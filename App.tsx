@@ -5,6 +5,9 @@ import { SafeAreaProvider } from 'react-native-safe-area-context'
 import { CampaignGameProvider, useSharedCampaignGame } from './src/hooks/CampaignGameContext'
 import { GameScreen } from './src/screens/GameScreen'
 import { LevelSelectScreen } from './src/screens/LevelSelectScreen'
+import { SettingsScreen } from './src/screens/SettingsScreen'
+
+type AppScreen = 'game' | 'levels' | 'settings'
 
 /**
  * App entry: SafeAreaProvider is required so useSafeAreaInsets
@@ -22,7 +25,7 @@ export default function App() {
 }
 
 function RootNavigation() {
-	const [screen, setScreen] = useState<'game' | 'levels'>('game')
+	const [screen, setScreen] = useState<AppScreen>('game')
 	const game = useSharedCampaignGame()
 
 	if (screen === 'levels') {
@@ -40,5 +43,24 @@ function RootNavigation() {
 		)
 	}
 
-	return <GameScreen onOpenLevels={() => setScreen('levels')} />
+	if (screen === 'settings') {
+		return (
+			<SettingsScreen
+				settings={game.settings}
+				onChange={game.updateSettings}
+				onReplayTutorial={() => {
+					game.replayTutorial()
+					setScreen('game')
+				}}
+				onClose={() => setScreen('game')}
+			/>
+		)
+	}
+
+	return (
+		<GameScreen
+			onOpenLevels={() => setScreen('levels')}
+			onOpenSettings={() => setScreen('settings')}
+		/>
+	)
 }

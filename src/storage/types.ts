@@ -1,8 +1,18 @@
 import type { Board } from '../game/types'
 import type { CampaignDifficultyBand } from '../campaign/config'
+import {
+	DEFAULT_GAME_SETTINGS,
+	type GameSettings,
+} from '../settings/types'
 
-/** Bump when persisted shape changes incompatibly. */
-export const STORAGE_SCHEMA_VERSION = 1
+/**
+ * Schema v2 adds settings while remaining loadable from v1 campaign saves.
+ * Bump only when the persisted shape changes incompatibly.
+ */
+export const STORAGE_SCHEMA_VERSION = 2
+
+/** Legacy schema still accepted and migrated on load. */
+export const LEGACY_STORAGE_SCHEMA_VERSION = 1
 
 export const STORAGE_KEY = 'watersort.campaign.v1'
 
@@ -26,6 +36,7 @@ export interface PersistedGameState {
 	campaignComplete: boolean
 	tutorialCompleted: boolean
 	session: PersistedLevelSession | null
+	settings: GameSettings
 }
 
 export function createDefaultPersistedState(): PersistedGameState {
@@ -36,5 +47,6 @@ export function createDefaultPersistedState(): PersistedGameState {
 		campaignComplete: false,
 		tutorialCompleted: false,
 		session: null,
+		settings: { ...DEFAULT_GAME_SETTINGS },
 	}
 }

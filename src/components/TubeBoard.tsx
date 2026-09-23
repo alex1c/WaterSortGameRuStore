@@ -1,7 +1,9 @@
 import { useMemo } from 'react'
 import { LayoutChangeEvent, StyleSheet, View } from 'react-native'
 
+import type { PourAnimation } from '../hooks/useCampaignGame'
 import type { Board, Move } from '../game/types'
+import type { PaletteMode } from '../theme'
 import { spacing } from '../theme'
 import { TubeView, type TubeHighlight } from './Tube'
 
@@ -10,6 +12,8 @@ interface TubeBoardProps {
 	selectedIndex: number | null
 	invalidFlashIndex: number | null
 	hintMove: Move | null
+	pourAnimation: PourAnimation | null
+	colorMode: PaletteMode
 	onTubePress: (index: number) => void
 	availableWidth: number
 	availableHeight: number
@@ -17,14 +21,14 @@ interface TubeBoardProps {
 
 /**
  * Responsive multi-row tube layout sized from measured available space.
- * Supports campaign boards from ~4 tubes (2 colors + 2 empty) up to 13
- * (11 colors + 2 empty) without shrinking below a usable tap target.
  */
 export function TubeBoard({
 	board,
 	selectedIndex,
 	invalidFlashIndex,
 	hintMove,
+	pourAnimation,
+	colorMode,
 	onTubePress,
 	availableWidth,
 	availableHeight,
@@ -33,6 +37,14 @@ export function TubeBoard({
 		() => computeTubeLayout(board.length, availableWidth, availableHeight),
 		[board.length, availableWidth, availableHeight],
 	)
+
+	const pourMeta = useMemo(() => {
+		if (!pourAnimation) return null
+		return {
+			direction: (pourAnimation.to > pourAnimation.from ? 1 : -1) as 1 | -1,
+			durationMs: pourAnimation.durationMs,
+		}
+	}, [pourAnimation])
 
 	return (
 		<View style={styles.container} testID="tube-board">
@@ -54,7 +66,19 @@ export function TubeBoard({
 									selectedIndex,
 									invalidFlashIndex,
 									hintMove,
+									pourAnimation,
 								)}
+								colorMode={colorMode}
+								pourDirection={
+									pourAnimation?.from === tubeIndex && pourMeta
+										? pourMeta.direction
+										: 0
+								}
+								pourDurationMs={
+									pourAnimation?.from === tubeIndex && pourMeta
+										? pourMeta.durationMs
+										: 0
+								}
 								onPress={() => onTubePress(tubeIndex)}
 								accessibilityLabel={`Пробирка ${tubeIndex + 1}, слоёв ${layers.length}`}
 							/>
@@ -71,8 +95,11 @@ function resolveHighlight(
 	selectedIndex: number | null,
 	invalidFlashIndex: number | null,
 	hintMove: Move | null,
+	pourAnimation: PourAnimation | null,
 ): TubeHighlight {
 	if (invalidFlashIndex === tubeIndex) return 'invalid'
+	if (pourAnimation?.from === tubeIndex) return 'pour-source'
+	if (pourAnimation?.to === tubeIndex) return 'pour-destination'
 	if (selectedIndex === tubeIndex) return 'selected'
 	if (hintMove?.from === tubeIndex) return 'hint-source'
 	if (hintMove?.to === tubeIndex) return 'hint-destination'
@@ -87,10 +114,6 @@ interface TubeLayout {
 	rowGap: number
 }
 
-/**
- * Choose columns so tubes stay tappable (>= MIN_TUBE_WIDTH) and fit height.
- * Large boards prefer more columns / more rows rather than unusable shrink.
- */
 export function computeTubeLayout(
 	tubeCount: number,
 	availableWidth: number,
@@ -108,7 +131,6 @@ export function computeTubeLayout(
 	const MIN_TUBE_HEIGHT = 96
 	const MAX_TUBE_HEIGHT = 200
 
-	// Try column counts from compact to wide; pick the first that keeps min width.
 	const maxColumns = Math.min(tubeCount, 7)
 	let columns = Math.min(Math.max(Math.ceil(Math.sqrt(tubeCount)), 3), maxColumns)
 

@@ -18,8 +18,7 @@ interface LevelSelectScreenProps {
 }
 
 /**
- * Compact 1–100 campaign grid. Unlocked / completed / locked are distinct;
- * locked levels cannot be opened.
+ * Compact 1–100 campaign grid with clearer completed / current / locked states.
  */
 export function LevelSelectScreen({
 	currentLevel,
@@ -59,6 +58,13 @@ export function LevelSelectScreen({
 				{campaignComplete ? ' · Кампания пройдена' : ''}
 			</Text>
 
+			<View style={styles.legend}>
+				<LegendDot color={uiColors.completed} label="Пройден" />
+				<LegendDot color={uiColors.tubeSelected} label="Текущий" />
+				<LegendDot color={uiColors.unlocked} label="Открыт" />
+				<LegendDot color={uiColors.locked} label="Закрыт" />
+			</View>
+
 			<ScrollView
 				style={styles.scroll}
 				contentContainerStyle={styles.grid}
@@ -93,20 +99,30 @@ export function LevelSelectScreen({
 								style={[
 									styles.cellLabel,
 									!unlocked && styles.cellLabelLocked,
+									completed && styles.cellLabelCompleted,
 								]}
 							>
 								{level}
 							</Text>
+							{completed ? <Text style={styles.check}>✓</Text> : null}
 						</Pressable>
 					)
 				})}
 			</ScrollView>
 
-			{/* Preserve ForestMusic bottom stack on this screen too. */}
 			<View style={styles.bottomStack}>
 				<AdBannerPlaceholder />
 				<View style={{ height: insets.bottom, backgroundColor: uiColors.surfaceMuted }} />
 			</View>
+		</View>
+	)
+}
+
+function LegendDot({ color, label }: { color: string; label: string }) {
+	return (
+		<View style={styles.legendItem}>
+			<View style={[styles.legendSwatch, { backgroundColor: color }]} />
+			<Text style={styles.legendLabel}>{label}</Text>
 		</View>
 	)
 }
@@ -145,9 +161,30 @@ const styles = StyleSheet.create({
 	},
 	subtitle: {
 		paddingHorizontal: spacing.lg,
-		paddingBottom: spacing.sm,
+		paddingBottom: spacing.xs,
 		marginTop: 4,
 		fontSize: 13,
+		color: uiColors.textSecondary,
+	},
+	legend: {
+		flexDirection: 'row',
+		flexWrap: 'wrap',
+		gap: spacing.md,
+		paddingHorizontal: spacing.lg,
+		paddingBottom: spacing.sm,
+	},
+	legendItem: {
+		flexDirection: 'row',
+		alignItems: 'center',
+		gap: 6,
+	},
+	legendSwatch: {
+		width: 10,
+		height: 10,
+		borderRadius: 5,
+	},
+	legendLabel: {
+		fontSize: 11,
 		color: uiColors.textSecondary,
 	},
 	scroll: {
@@ -164,14 +201,14 @@ const styles = StyleSheet.create({
 		width: '18%',
 		aspectRatio: 1,
 		minWidth: 52,
-		borderRadius: 10,
+		borderRadius: 12,
 		alignItems: 'center',
 		justifyContent: 'center',
 		borderWidth: 1,
 	},
 	cellUnlocked: {
 		backgroundColor: uiColors.surface,
-		borderColor: uiColors.unlocked,
+		borderColor: '#B7D4F5',
 	},
 	cellCompleted: {
 		backgroundColor: '#E5F6EE',
@@ -184,6 +221,11 @@ const styles = StyleSheet.create({
 	cellCurrent: {
 		borderWidth: 2,
 		borderColor: uiColors.tubeSelected,
+		shadowColor: uiColors.tubeSelected,
+		shadowOpacity: 0.25,
+		shadowRadius: 4,
+		shadowOffset: { width: 0, height: 1 },
+		elevation: 3,
 	},
 	cellLabel: {
 		fontSize: 14,
@@ -192,6 +234,17 @@ const styles = StyleSheet.create({
 	},
 	cellLabelLocked: {
 		color: uiColors.locked,
+	},
+	cellLabelCompleted: {
+		color: uiColors.completed,
+	},
+	check: {
+		position: 'absolute',
+		top: 4,
+		right: 6,
+		fontSize: 10,
+		color: uiColors.completed,
+		fontWeight: '800',
 	},
 	pressed: {
 		opacity: 0.85,

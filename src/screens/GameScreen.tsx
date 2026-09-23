@@ -82,25 +82,26 @@ export function GameScreen({ onOpenLevels }: GameScreenProps) {
 			/>
 			<TrainingHint step={game.trainingStep} />
 
-			<View style={styles.boardRegion} onLayout={handleBoardLayout}>
-				{boardArea.width > 0 && boardArea.height > 0 ? (
-					<TubeBoard
-						board={game.currentBoard}
-						selectedIndex={game.selectedTube}
-						invalidFlashIndex={game.invalidFlashIndex}
-						hintMove={game.hintMove}
-						onTubePress={game.handleTubePress}
-						availableWidth={boardArea.width}
-						availableHeight={boardArea.height}
-					/>
+			<View style={styles.boardRegion}>
+				{game.hintMessage ? (
+					<View style={styles.hintBanner} pointerEvents="none">
+						<Text style={styles.hintBannerText}>{game.hintMessage}</Text>
+					</View>
 				) : null}
-			</View>
-
-			{game.hintMessage ? (
-				<View style={styles.hintBanner} pointerEvents="none">
-					<Text style={styles.hintBannerText}>{game.hintMessage}</Text>
+				<View style={styles.boardContent} onLayout={handleBoardLayout}>
+					{boardArea.width > 0 && boardArea.height > 0 ? (
+						<TubeBoard
+							board={game.currentBoard}
+							selectedIndex={game.selectedTube}
+							invalidFlashIndex={game.invalidFlashIndex}
+							hintMove={game.hintMove}
+							onTubePress={game.handleTubePress}
+							availableWidth={boardArea.width}
+							availableHeight={boardArea.height}
+						/>
+					) : null}
 				</View>
-			) : null}
+			</View>
 
 			{game.toastMessage ? (
 				<View style={styles.toast} pointerEvents="none">
@@ -159,6 +160,10 @@ const styles = StyleSheet.create({
 		fontSize: 14,
 	},
 	boardRegion: {
+		flex: 1,
+		minHeight: 0,
+	},
+	boardContent: {
 		flex: 1,
 		minHeight: 0,
 	},

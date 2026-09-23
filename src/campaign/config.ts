@@ -6,6 +6,15 @@ export const CAMPAIGN_LEVEL_COUNT = 100
 /** Stable seed namespace — must not change for existing levels. */
 export const CAMPAIGN_SEED_PREFIX = 'watersort-campaign-v1-level'
 
+/**
+ * Level 5 originally landed on the same tube-order equivalence class as
+ * Level 1. Keep the v1 namespace stable while giving that one puzzle a
+ * deterministic calibrated seed.
+ */
+const CAMPAIGN_SEED_OVERRIDES: Partial<Record<number, string>> = {
+	5: `${CAMPAIGN_SEED_PREFIX}-5-calibrated`,
+}
+
 export type CampaignDifficultyBand = DifficultyTier
 
 export interface CampaignLevelConfig {
@@ -32,7 +41,7 @@ export function getCampaignLevelConfig(levelNumber: number): CampaignLevelConfig
 	const colorCount = getCampaignColorCount(levelNumber)
 	return {
 		levelNumber,
-		seed: `${CAMPAIGN_SEED_PREFIX}-${levelNumber}`,
+		seed: CAMPAIGN_SEED_OVERRIDES[levelNumber] ?? `${CAMPAIGN_SEED_PREFIX}-${levelNumber}`,
 		colorCount,
 		emptyTubeCount: 2,
 		band,

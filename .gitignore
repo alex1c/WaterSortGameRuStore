@@ -45,6 +45,7 @@ yarn-error.*
 
 # test / coverage
 coverage/
+tmp/
 
 # IDE
 .idea/

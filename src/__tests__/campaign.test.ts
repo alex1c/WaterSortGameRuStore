@@ -15,6 +15,7 @@ import {
 	undoMove,
 } from '../campaign'
 import { canPour, getLegalMoves, isSolved } from '../game'
+import { canonicalKey } from '../game/solver'
 import { computeTubeLayout } from '../components/TubeBoard'
 
 describe('campaign levels', () => {
@@ -51,6 +52,13 @@ describe('campaign levels', () => {
 		const a = createCampaignLevel(2)
 		const b = createCampaignLevel(3)
 		expect(JSON.stringify(a.board)).not.toBe(JSON.stringify(b.board))
+	}, 20_000)
+
+	it('keeps Level 5 out of Level 1 tube-order equivalence', () => {
+		const levelOne = createCampaignLevel(1)
+		const levelFive = createCampaignLevel(5)
+		expect(getCampaignLevelConfig(5).seed).toBe('watersort-campaign-v1-level-5-calibrated')
+		expect(canonicalKey(levelFive.board)).not.toBe(canonicalKey(levelOne.board))
 	}, 20_000)
 })
 

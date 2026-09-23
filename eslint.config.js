@@ -17,10 +17,9 @@ module.exports = defineConfig([
 	{
 		rules: {
 			// Keep Phase 1 noise low while still catching real mistakes.
-			'no-unused-vars': 'off',
-			'@typescript-eslint/no-unused-vars': [
+			'no-unused-vars': [
 				'warn',
-				{ argsIgnorePattern: '^_', varsIgnorePattern: '^_' },
+				{ args: 'none', varsIgnorePattern: '^_' },
 			],
 		},
 	},

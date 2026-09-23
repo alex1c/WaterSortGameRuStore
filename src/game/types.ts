@@ -1,16 +1,9 @@
-/**
- * Liquid color identifiers used by the temporary sample board.
- * Keep IDs stable so UI, tests, and a future game-core can share them.
+/** Stable identifier for one liquid color.
+ *
+ * The production generator creates more colors than the Phase 1 sample UI,
+ * so the core intentionally does not constrain this to a closed union.
  */
-export type ColorId =
-	| 'red'
-	| 'blue'
-	| 'green'
-	| 'yellow'
-	| 'purple'
-	| 'orange'
-	| 'teal'
-	| 'pink'
+export type ColorId = string
 
 /**
  * A single tube is an ordered stack of color layers.
@@ -20,6 +13,12 @@ export type Tube = ColorId[]
 
 /** Full board state: one tube per array entry. */
 export type Board = Tube[]
+
+/** One deterministic move between two distinct tube indices. */
+export interface Move {
+	from: number
+	to: number
+}
 
 /** Maximum layers that fit in one tube (classic Water Sort rule). */
 export const TUBE_CAPACITY = 4

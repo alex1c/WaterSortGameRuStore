@@ -11,6 +11,7 @@
     "typecheck": "tsc --noEmit",
     "lint": "expo lint",
     "test": "jest",
+    "qa:bulk": "jest --runInBand src/game/__tests__/bulkQa.test.ts",
     "test:watch": "jest --watch",
     "android:qa": "powershell -ExecutionPolicy Bypass -File ./scripts/android-device-qa.ps1"
   },

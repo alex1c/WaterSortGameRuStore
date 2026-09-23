@@ -75,7 +75,9 @@ export function getLiquidColor(
 	colorId: ColorId,
 	mode: PaletteMode = 'normal',
 ): string {
-	return liquidByMode[mode][colorId]
+	// Generated levels may contain more identities than the Phase 1 sample
+	// palette. Keep the UI safe until a production palette is added.
+	return liquidByMode[mode][colorId] ?? '#607D8B'
 }
 
 /** Optional future symbol/pattern key per color (stub for a11y). */

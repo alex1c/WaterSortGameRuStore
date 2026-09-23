@@ -16,6 +16,7 @@
     "android:qa": "powershell -ExecutionPolicy Bypass -File ./scripts/android-device-qa.ps1"
   },
   "dependencies": {
+    "@react-native-async-storage/async-storage": "2.2.0",
     "expo": "~57.0.24",
     "expo-dev-client": "~57.0.19",
     "expo-splash-screen": "~57.0.9",

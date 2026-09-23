@@ -7,9 +7,10 @@ describe('theme palette abstraction', () => {
 		expect(AD_BANNER_HEIGHT).toBeLessThanOrEqual(60)
 	})
 
-	it('centralizes liquid colors for normal palette', () => {
-		expect(getLiquidColor('red')).toMatch(/^#/)
-		expect(getLiquidColor('blue')).not.toBe(getLiquidColor('red'))
+	it('maps generated color ids to distinct fills', () => {
+		expect(getLiquidColor('color-1')).toMatch(/^#/)
+		expect(getLiquidColor('color-2')).not.toBe(getLiquidColor('color-1'))
+		expect(getLiquidColor('color-12')).toMatch(/^#/)
 		expect(uiColors.background).toMatch(/^#/)
 	})
 })

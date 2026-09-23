@@ -6,16 +6,22 @@ interface GameControlsProps {
 	onUndo: () => void
 	onHint: () => void
 	onRestart: () => void
+	canUndo: boolean
 }
 
 /**
  * Bottom game actions. Must sit ABOVE AdBannerPlaceholder in the screen
  * flex stack (never absolutely pinned to the physical screen bottom).
  */
-export function GameControls({ onUndo, onHint, onRestart }: GameControlsProps) {
+export function GameControls({
+	onUndo,
+	onHint,
+	onRestart,
+	canUndo,
+}: GameControlsProps) {
 	return (
 		<View style={styles.row} testID="game-controls">
-			<ControlButton label="Отмена" onPress={onUndo} />
+			<ControlButton label="Отмена" onPress={onUndo} disabled={!canUndo} />
 			<ControlButton label="Подсказка" onPress={onHint} />
 			<ControlButton label="Заново" onPress={onRestart} />
 		</View>
@@ -25,20 +31,26 @@ export function GameControls({ onUndo, onHint, onRestart }: GameControlsProps) {
 interface ControlButtonProps {
 	label: string
 	onPress: () => void
+	disabled?: boolean
 }
 
-function ControlButton({ label, onPress }: ControlButtonProps) {
+function ControlButton({ label, onPress, disabled = false }: ControlButtonProps) {
 	return (
 		<Pressable
 			accessibilityRole="button"
 			accessibilityLabel={label}
+			accessibilityState={{ disabled }}
+			disabled={disabled}
 			onPress={onPress}
 			style={({ pressed }) => [
 				styles.button,
-				pressed && styles.buttonPressed,
+				disabled && styles.buttonDisabled,
+				pressed && !disabled && styles.buttonPressed,
 			]}
 		>
-			<Text style={styles.buttonLabel}>{label}</Text>
+			<Text style={[styles.buttonLabel, disabled && styles.buttonLabelDisabled]}>
+				{label}
+			</Text>
 		</Pressable>
 	)
 }
@@ -68,9 +80,16 @@ const styles = StyleSheet.create({
 	buttonPressed: {
 		backgroundColor: uiColors.controlPressed,
 	},
+	buttonDisabled: {
+		borderColor: uiColors.controlDisabled,
+		backgroundColor: '#EEF3F5',
+	},
 	buttonLabel: {
 		color: uiColors.textPrimary,
 		fontSize: 14,
 		fontWeight: '600',
+	},
+	buttonLabelDisabled: {
+		color: uiColors.controlDisabled,
 	},
 })

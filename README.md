@@ -1,6 +1,6 @@
 # Water Sort — RuStore / ForestMusic
 
-Phase 1 playable UI shell for a Water Sort puzzle game targeting Android / RuStore.
+Campaign Water Sort puzzle game for Android / RuStore.
 
 ## Stack
 
@@ -10,6 +10,7 @@ Phase 1 playable UI shell for a Water Sort puzzle game targeting Android / RuSto
 - TypeScript (strict)
 - ESLint
 - Jest (`jest-expo`)
+- AsyncStorage (campaign progress)
 
 ## Package
 
@@ -27,33 +28,35 @@ npm test
 npm run android:qa
 ```
 
-Android device QA helper (safe, read-only except optional `local.properties` create):
+## Campaign
 
-```powershell
-powershell -ExecutionPolicy Bypass -File ./scripts/android-device-qa.ps1
-```
-
-Open the development client against localhost Metro:
+Levels 1–100 are generated deterministically:
 
 ```text
-water-sort://expo-development-client/?url=http%3A%2F%2F127.0.0.1%3A8081
+seed = watersort-campaign-v1-level-{N}
 ```
+
+Difficulty bands (UI labels): Новичок → Легко → Средне → Сложно → Эксперт.
 
 ## Source layout
 
 ```text
 src/
-  components/   # Tube, board, controls, AdBannerPlaceholder
-  screens/      # GameScreen
-  game/         # Temporary sample board + pour logic (replace later)
-  theme/        # Centralized palette / spacing
-  hooks/
-  storage/
+  campaign/     # level config, createLevel, play session helpers
+  components/   # tubes, controls, win modal, ad placeholder
+  screens/      # GameScreen, LevelSelectScreen
+  game/         # pure engine (core / solver / generator)
+  hooks/        # useCampaignGame + context
+  theme/
+  storage/      # versioned AsyncStorage persistence
 scripts/
 ```
 
-## Phase 1 notes
+## Bottom layout (mandatory)
 
-- Sample board only — no solver / generator / ads SDK / AppMetrica.
-- Bottom layout: controls → fake ad banner → real safe-area inset.
-- `AdBannerPlaceholder` reserves space for a future small banner.
+```text
+GAME CONTENT
+→ BOTTOM CONTROLS
+→ AdBannerPlaceholder (50px)
+→ REAL ANDROID SAFE AREA
+```

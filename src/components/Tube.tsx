@@ -4,14 +4,13 @@ import type { ColorId, Tube as TubeLayers } from '../game/types'
 import { TUBE_CAPACITY } from '../game/types'
 import { getLiquidColor, uiColors } from '../theme'
 
+export type TubeHighlight = 'none' | 'selected' | 'hint-source' | 'hint-destination' | 'invalid'
+
 interface TubeProps {
 	layers: TubeLayers
-	/** Outer pixel width for this tube (computed by TubeBoard). */
 	width: number
-	/** Outer pixel height for this tube (computed by TubeBoard). */
 	height: number
-	selected: boolean
-	invalidFlash: boolean
+	highlight: TubeHighlight
 	onPress: () => void
 	accessibilityLabel: string
 }
@@ -24,28 +23,33 @@ export function TubeView({
 	layers,
 	width,
 	height,
-	selected,
-	invalidFlash,
+	highlight,
 	onPress,
 	accessibilityLabel,
 }: TubeProps) {
-	const outlineColor = invalidFlash
-		? uiColors.tubeInvalidFlash
-		: selected
-			? uiColors.tubeSelected
-			: uiColors.tubeOutline
+	const outlineColor =
+		highlight === 'invalid'
+			? uiColors.tubeInvalidFlash
+			: highlight === 'selected'
+				? uiColors.tubeSelected
+				: highlight === 'hint-source'
+					? uiColors.tubeHintSource
+					: highlight === 'hint-destination'
+						? uiColors.tubeHintDestination
+						: uiColors.tubeOutline
 
+	const emphasized = highlight !== 'none'
 	const layerHeight = (height - 10) / TUBE_CAPACITY
 
 	return (
 		<Pressable
 			accessibilityRole="button"
 			accessibilityLabel={accessibilityLabel}
-			accessibilityState={{ selected }}
+			accessibilityState={{ selected: highlight === 'selected' }}
 			onPress={onPress}
 			style={[
 				styles.pressable,
-				selected && styles.selectedLift,
+				highlight === 'selected' && styles.selectedLift,
 				{ width, height },
 			]}
 		>
@@ -56,19 +60,17 @@ export function TubeView({
 						width,
 						height,
 						borderColor: outlineColor,
-						borderWidth: selected || invalidFlash ? 3 : 2,
+						borderWidth: emphasized ? 3 : 2,
 					},
 				]}
 			>
 				<View style={styles.inner}>
-					{/* Empty slots above the liquid keep capacity visually clear. */}
 					{Array.from({ length: TUBE_CAPACITY - layers.length }).map((_, index) => (
 						<View
 							key={`empty-${index}`}
 							style={[styles.slot, { height: layerHeight }]}
 						/>
 					))}
-					{/* Render top-first in the flex column so bottom layers sit lower. */}
 					{[...layers].reverse().map((colorId, index) => (
 						<LiquidLayer
 							key={`layer-${layers.length - 1 - index}-${colorId}`}

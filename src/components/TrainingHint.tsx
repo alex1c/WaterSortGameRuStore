@@ -1,28 +1,43 @@
 import { StyleSheet, Text, View } from 'react-native'
 
+import type { TrainingStep } from '../hooks/useCampaignGame'
 import { spacing, uiColors } from '../theme'
 
 interface TrainingHintProps {
-	/** Hide after the player completes the first successful pour. */
-	visible: boolean
+	step: TrainingStep
 }
 
 /**
- * Lightweight onboarding line for ForestMusic training prep.
- * Full tutorial flow is intentionally deferred to a later phase.
+ * In-game Level 1 coaching lines. Not a multi-screen onboarding flow.
  */
-export function TrainingHint({ visible }: TrainingHintProps) {
-	if (!visible) {
+export function TrainingHint({ step }: TrainingHintProps) {
+	const text = messageForStep(step)
+	if (!text) {
 		return null
 	}
 
 	return (
 		<View style={styles.container} testID="training-hint">
-			<Text style={styles.text}>
-				Выберите пробирку, затем укажите, куда перелить воду
-			</Text>
+			<Text style={styles.text}>{text}</Text>
 		</View>
 	)
+}
+
+function messageForStep(step: TrainingStep): string | null {
+	switch (step) {
+		case 'pick-source':
+			return 'Выберите пробирку'
+		case 'pick-destination':
+			return 'Теперь выберите, куда перелить воду'
+		case 'encourage':
+			return 'Отлично! Соберите каждый цвет в отдельной пробирке'
+		case 'done':
+			return null
+		default: {
+			const _exhaustive: never = step
+			return _exhaustive
+		}
+	}
 }
 
 const styles = StyleSheet.create({

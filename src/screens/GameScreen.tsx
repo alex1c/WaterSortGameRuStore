@@ -1,39 +1,40 @@
 import { useState } from 'react'
-import { LayoutChangeEvent, StyleSheet, Text, View } from 'react-native'
+import {
+	ActivityIndicator,
+	Alert,
+	LayoutChangeEvent,
+	StyleSheet,
+	Text,
+	View,
+} from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
-import { useSampleGame } from '../hooks/useSampleGame'
-import { uiColors } from '../theme'
 import { AdBannerPlaceholder } from '../components/AdBannerPlaceholder'
 import { GameControls } from '../components/GameControls'
 import { GameHeader } from '../components/GameHeader'
 import { TrainingHint } from '../components/TrainingHint'
 import { TubeBoard } from '../components/TubeBoard'
+import { WinModal } from '../components/WinModal'
+import { useSharedCampaignGame } from '../hooks/CampaignGameContext'
+import { uiColors } from '../theme'
+
+interface GameScreenProps {
+	onOpenLevels: () => void
+}
 
 /**
- * Phase 1 playable UI shell.
+ * Phase 3 campaign gameplay screen.
  *
  * Vertical stack (top → bottom), no absolute physical-bottom pinning:
  *   header + training hint
- *   → flexible game board (uses remaining height)
+ *   → flexible game board
  *   → bottom controls
- *   → AdBannerPlaceholder
+ *   → AdBannerPlaceholder (50px)
  *   → real device bottom safe-area inset
  */
-export function GameScreen() {
+export function GameScreen({ onOpenLevels }: GameScreenProps) {
 	const insets = useSafeAreaInsets()
-	const {
-		board,
-		selectedIndex,
-		invalidFlashIndex,
-		hasCompletedMove,
-		hintMessage,
-		handleTubePress,
-		handleUndo,
-		handleRestart,
-		handleHintPress,
-	} = useSampleGame()
-
+	const game = useSharedCampaignGame()
 	const [boardArea, setBoardArea] = useState({ width: 0, height: 0 })
 
 	const handleBoardLayout = (event: LayoutChangeEvent) => {
@@ -41,62 +42,104 @@ export function GameScreen() {
 		setBoardArea({ width, height })
 	}
 
+	const requestRestart = () => {
+		if (!game.shouldConfirmRestart()) {
+			game.handleRestart()
+			return
+		}
+		Alert.alert('Начать заново?', 'Текущий прогресс уровня будет сброшен.', [
+			{ text: 'Отмена', style: 'cancel' },
+			{ text: 'Заново', style: 'destructive', onPress: () => game.handleRestart() },
+		])
+	}
+
+	if (!game.ready) {
+		return (
+			<View style={[styles.root, styles.loading, { paddingTop: insets.top }]}>
+				<ActivityIndicator color={uiColors.tubeSelected} />
+				<Text style={styles.loadingText}>Загрузка уровня…</Text>
+			</View>
+		)
+	}
+
 	return (
 		<View
 			style={[
 				styles.root,
 				{
-					// Horizontal insets protect gesture / curved edges.
 					paddingLeft: insets.left,
 					paddingRight: insets.right,
-					// Top inset keeps the header below status bar / cutout.
 					paddingTop: insets.top,
 				},
 			]}
 			testID="game-screen"
 		>
-			<GameHeader />
-			<TrainingHint visible={!hasCompletedMove} />
+			<GameHeader
+				levelNumber={game.levelNumber}
+				difficultyLabel={game.difficultyLabel}
+				moveCount={game.moveCount}
+				onOpenLevels={onOpenLevels}
+			/>
+			<TrainingHint step={game.trainingStep} />
 
-			{/* Flexible middle: tubes size themselves from this measured area. */}
 			<View style={styles.boardRegion} onLayout={handleBoardLayout}>
 				{boardArea.width > 0 && boardArea.height > 0 ? (
 					<TubeBoard
-						board={board}
-						selectedIndex={selectedIndex}
-						invalidFlashIndex={invalidFlashIndex}
-						onTubePress={handleTubePress}
+						board={game.currentBoard}
+						selectedIndex={game.selectedTube}
+						invalidFlashIndex={game.invalidFlashIndex}
+						hintMove={game.hintMove}
+						onTubePress={game.handleTubePress}
 						availableWidth={boardArea.width}
 						availableHeight={boardArea.height}
 					/>
 				) : null}
 			</View>
 
-			{/* Temporary toast for hint / empty-undo feedback. */}
-			{hintMessage ? (
-				<View style={styles.toast} pointerEvents="none">
-					<Text style={styles.toastText}>{hintMessage}</Text>
+			{game.hintMessage ? (
+				<View style={styles.hintBanner} pointerEvents="none">
+					<Text style={styles.hintBannerText}>{game.hintMessage}</Text>
 				</View>
 			) : null}
 
-			{/*
-			  Bottom stack stays in document flow:
-			  controls → banner → real Android bottom inset.
-			  Do NOT position these with absolute bottom offsets.
-			*/}
+			{game.toastMessage ? (
+				<View style={styles.toast} pointerEvents="none">
+					<Text style={styles.toastText}>{game.toastMessage}</Text>
+				</View>
+			) : null}
+
 			<View style={styles.bottomStack} testID="bottom-stack">
 				<GameControls
-					onUndo={handleUndo}
-					onHint={handleHintPress}
-					onRestart={handleRestart}
+					onUndo={game.handleUndo}
+					onHint={game.handleHint}
+					onRestart={requestRestart}
+					canUndo={game.canUndo}
 				/>
 				<AdBannerPlaceholder />
-				{/* Real navigation / gesture inset — below the fake banner. */}
 				<View
 					style={{ height: insets.bottom, backgroundColor: uiColors.surfaceMuted }}
 					testID="bottom-safe-area-spacer"
 				/>
 			</View>
+
+			<WinModal
+				visible={game.isLevelSolved && !game.showCampaignFinished}
+				levelNumber={game.levelNumber}
+				moveCount={game.moveCount}
+				difficultyLabel={game.difficultyLabel}
+				isFinalCampaignLevel={game.levelNumber >= 100}
+				onNext={game.handleNextLevel}
+				onReplay={game.handleReplayLevel}
+			/>
+
+			{game.showCampaignFinished ? (
+				<View style={styles.campaignDone} testID="campaign-finished">
+					<Text style={styles.campaignDoneTitle}>Первые 100 уровней пройдены</Text>
+					<Text style={styles.campaignDoneBody}>
+						Можно переигрывать уровни из меню «Уровни».
+					</Text>
+				</View>
+			) : null}
 		</View>
 	)
 }
@@ -106,18 +149,39 @@ const styles = StyleSheet.create({
 		flex: 1,
 		backgroundColor: uiColors.background,
 	},
+	loading: {
+		alignItems: 'center',
+		justifyContent: 'center',
+		gap: 12,
+	},
+	loadingText: {
+		color: uiColors.textSecondary,
+		fontSize: 14,
+	},
 	boardRegion: {
 		flex: 1,
 		minHeight: 0,
 	},
 	bottomStack: {
 		width: '100%',
-		// Explicitly not position:'absolute' — critical for Android QA.
+	},
+	hintBanner: {
+		alignSelf: 'center',
+		marginBottom: 8,
+		paddingHorizontal: 14,
+		paddingVertical: 6,
+		borderRadius: 8,
+		backgroundColor: 'rgba(242, 161, 0, 0.92)',
+	},
+	hintBannerText: {
+		color: '#1A2B33',
+		fontSize: 13,
+		fontWeight: '600',
 	},
 	toast: {
 		position: 'absolute',
 		alignSelf: 'center',
-		bottom: 140,
+		top: '42%',
 		paddingHorizontal: 14,
 		paddingVertical: 8,
 		borderRadius: 8,
@@ -126,5 +190,24 @@ const styles = StyleSheet.create({
 	toastText: {
 		color: '#FFFFFF',
 		fontSize: 13,
+	},
+	campaignDone: {
+		...StyleSheet.absoluteFill,
+		backgroundColor: uiColors.overlay,
+		alignItems: 'center',
+		justifyContent: 'center',
+		paddingHorizontal: 24,
+	},
+	campaignDoneTitle: {
+		fontSize: 20,
+		fontWeight: '700',
+		color: '#FFFFFF',
+		textAlign: 'center',
+		marginBottom: 8,
+	},
+	campaignDoneBody: {
+		fontSize: 14,
+		color: '#E8F4F8',
+		textAlign: 'center',
 	},
 })

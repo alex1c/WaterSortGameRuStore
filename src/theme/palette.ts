@@ -2,8 +2,7 @@ import type { ColorId } from '../game/types'
 
 /**
  * Palette modes prepared for a future accessibility feature.
- * Phase 1 only renders `normal`; high-contrast and patterned modes
- * are stubs so color hex values stay centralized (not scattered in UI).
+ * Keep hex values centralized — components must not scatter raw colors.
  */
 export type PaletteMode = 'normal' | 'highContrast' | 'patterned'
 
@@ -18,56 +17,89 @@ export const uiColors = {
 	tubeGlass: 'rgba(255, 255, 255, 0.55)',
 	tubeOutline: '#5A7A88',
 	tubeSelected: '#2F80ED',
+	tubeHintSource: '#F2A100',
+	tubeHintDestination: '#2E9E6A',
 	tubeInvalidFlash: '#E05A5A',
 	controlBackground: '#FFFFFF',
 	controlBorder: '#7FA3B0',
 	controlPressed: '#D0E4EC',
+	controlDisabled: '#B7C7CE',
 	bannerBackground: '#C9D8DE',
 	bannerText: '#3A5058',
-	hintBackground: 'rgba(255, 255, 255, 0.88)',
+	hintBackground: 'rgba(255, 255, 255, 0.92)',
 	shadow: 'rgba(26, 43, 51, 0.18)',
+	overlay: 'rgba(15, 28, 34, 0.45)',
+	locked: '#A0B4BC',
+	unlocked: '#2F80ED',
+	completed: '#2E9E6A',
 } as const
 
 /**
- * Strongly distinguishable liquid fills for the normal palette.
- * Values are intentionally vivid so layers read clearly on 1080×1920 shots.
+ * Ordered vivid fills for generated color-1..color-N identities.
+ * Index 0 maps to color-1.
  */
-const normalLiquid: Record<ColorId, string> = {
-	red: '#E53935',
-	blue: '#1E88E5',
-	green: '#43A047',
-	yellow: '#FDD835',
-	purple: '#8E24AA',
-	orange: '#FB8C00',
-	teal: '#00897B',
-	pink: '#D81B60',
+const GENERATED_NORMAL = [
+	'#E53935',
+	'#1E88E5',
+	'#43A047',
+	'#FDD835',
+	'#8E24AA',
+	'#FB8C00',
+	'#00897B',
+	'#D81B60',
+	'#5E35B1',
+	'#00ACC1',
+	'#6D4C41',
+	'#3949AB',
+] as const
+
+const GENERATED_HIGH_CONTRAST = [
+	'#FF0000',
+	'#004CFF',
+	'#00A000',
+	'#FFE600',
+	'#9B00FF',
+	'#FF6A00',
+	'#007A70',
+	'#FF1493',
+	'#6A00FF',
+	'#00D0FF',
+	'#8B4513',
+	'#0000AA',
+] as const
+
+/** Legacy named sample colors kept for any remaining fixtures. */
+const namedNormal: Record<string, string> = {
+	red: GENERATED_NORMAL[0],
+	blue: GENERATED_NORMAL[1],
+	green: GENERATED_NORMAL[2],
+	yellow: GENERATED_NORMAL[3],
+	purple: GENERATED_NORMAL[4],
+	orange: GENERATED_NORMAL[5],
+	teal: GENERATED_NORMAL[6],
+	pink: GENERATED_NORMAL[7],
 }
 
-/**
- * High-contrast stub — darker/brighter pairs for a later a11y mode.
- * Not wired into UI yet; kept here so components never hard-code hex.
- */
-const highContrastLiquid: Record<ColorId, string> = {
-	red: '#FF0000',
-	blue: '#004CFF',
-	green: '#00A000',
-	yellow: '#FFE600',
-	purple: '#9B00FF',
-	orange: '#FF6A00',
-	teal: '#007A70',
-	pink: '#FF1493',
+const namedHighContrast: Record<string, string> = {
+	red: GENERATED_HIGH_CONTRAST[0],
+	blue: GENERATED_HIGH_CONTRAST[1],
+	green: GENERATED_HIGH_CONTRAST[2],
+	yellow: GENERATED_HIGH_CONTRAST[3],
+	purple: GENERATED_HIGH_CONTRAST[4],
+	orange: GENERATED_HIGH_CONTRAST[5],
+	teal: GENERATED_HIGH_CONTRAST[6],
+	pink: GENERATED_HIGH_CONTRAST[7],
 }
 
-/**
- * Patterned mode reuses normal fills for now.
- * Future work can map ColorId → { color, patternId } without touching tubes.
- */
-const patternedLiquid: Record<ColorId, string> = { ...normalLiquid }
-
-const liquidByMode: Record<PaletteMode, Record<ColorId, string>> = {
-	normal: normalLiquid,
-	highContrast: highContrastLiquid,
-	patterned: patternedLiquid,
+function resolveGenerated(
+	colorId: ColorId,
+	palette: readonly string[],
+): string | undefined {
+	const match = /^color-(\d+)$/.exec(colorId)
+	if (!match) return undefined
+	const index = Number(match[1]) - 1
+	if (index < 0) return undefined
+	return palette[index % palette.length]
 }
 
 /** Resolve a liquid fill for the active palette mode (defaults to normal). */
@@ -75,9 +107,18 @@ export function getLiquidColor(
 	colorId: ColorId,
 	mode: PaletteMode = 'normal',
 ): string {
-	// Generated levels may contain more identities than the Phase 1 sample
-	// palette. Keep the UI safe until a production palette is added.
-	return liquidByMode[mode][colorId] ?? '#607D8B'
+	if (mode === 'highContrast') {
+		return (
+			resolveGenerated(colorId, GENERATED_HIGH_CONTRAST) ??
+			namedHighContrast[colorId] ??
+			'#111111'
+		)
+	}
+	return (
+		resolveGenerated(colorId, GENERATED_NORMAL) ??
+		namedNormal[colorId] ??
+		'#607D8B'
+	)
 }
 
 /** Optional future symbol/pattern key per color (stub for a11y). */

@@ -1,29 +1,30 @@
 import { useMemo } from 'react'
 import { LayoutChangeEvent, StyleSheet, View } from 'react-native'
 
-import type { Board } from '../game/types'
+import type { Board, Move } from '../game/types'
 import { spacing } from '../theme'
-import { TubeView } from './Tube'
+import { TubeView, type TubeHighlight } from './Tube'
 
 interface TubeBoardProps {
 	board: Board
 	selectedIndex: number | null
 	invalidFlashIndex: number | null
+	hintMove: Move | null
 	onTubePress: (index: number) => void
-	/** Remaining vertical space after header / controls / banner / insets. */
 	availableWidth: number
 	availableHeight: number
 }
 
 /**
- * Responsive multi-row tube layout.
- * Sizes tubes from available width/height instead of hard-coded device coords,
- * leaving room for future levels with more tubes.
+ * Responsive multi-row tube layout sized from measured available space.
+ * Supports campaign boards from ~4 tubes (2 colors + 2 empty) up to 13
+ * (11 colors + 2 empty) without shrinking below a usable tap target.
  */
 export function TubeBoard({
 	board,
 	selectedIndex,
 	invalidFlashIndex,
+	hintMove,
 	onTubePress,
 	availableWidth,
 	availableHeight,
@@ -48,8 +49,12 @@ export function TubeBoard({
 								layers={layers}
 								width={layout.tubeWidth}
 								height={layout.tubeHeight}
-								selected={selectedIndex === tubeIndex}
-								invalidFlash={invalidFlashIndex === tubeIndex}
+								highlight={resolveHighlight(
+									tubeIndex,
+									selectedIndex,
+									invalidFlashIndex,
+									hintMove,
+								)}
 								onPress={() => onTubePress(tubeIndex)}
 								accessibilityLabel={`Пробирка ${tubeIndex + 1}, слоёв ${layers.length}`}
 							/>
@@ -61,6 +66,19 @@ export function TubeBoard({
 	)
 }
 
+function resolveHighlight(
+	tubeIndex: number,
+	selectedIndex: number | null,
+	invalidFlashIndex: number | null,
+	hintMove: Move | null,
+): TubeHighlight {
+	if (invalidFlashIndex === tubeIndex) return 'invalid'
+	if (selectedIndex === tubeIndex) return 'selected'
+	if (hintMove?.from === tubeIndex) return 'hint-source'
+	if (hintMove?.to === tubeIndex) return 'hint-destination'
+	return 'none'
+}
+
 interface TubeLayout {
 	rows: number[][]
 	tubeWidth: number
@@ -70,10 +88,10 @@ interface TubeLayout {
 }
 
 /**
- * Pick a column count that fits width, then size tubes to remaining height.
- * Prefers 5 columns on wide phones so 10-tube boards become two neat rows.
+ * Choose columns so tubes stay tappable (>= MIN_TUBE_WIDTH) and fit height.
+ * Large boards prefer more columns / more rows rather than unusable shrink.
  */
-function computeTubeLayout(
+export function computeTubeLayout(
 	tubeCount: number,
 	availableWidth: number,
 	availableHeight: number,
@@ -82,22 +100,40 @@ function computeTubeLayout(
 	const safeHeight = Math.max(availableHeight, 1)
 	const gap = spacing.sm
 	const rowGap = spacing.md
-	const horizontalPadding = spacing.lg * 2
-
-	const preferredColumns = Math.min(5, Math.max(4, Math.ceil(tubeCount / 2)))
-	const columns = Math.min(preferredColumns, tubeCount)
-	const rowCount = Math.ceil(tubeCount / columns)
-
+	const horizontalPadding = spacing.md * 2
 	const usableWidth = Math.max(safeWidth - horizontalPadding, 1)
-	const tubeWidth = Math.min(
-		72,
-		Math.floor((usableWidth - gap * (columns - 1)) / columns),
+
+	const MIN_TUBE_WIDTH = 44
+	const MAX_TUBE_WIDTH = 72
+	const MIN_TUBE_HEIGHT = 96
+	const MAX_TUBE_HEIGHT = 200
+
+	// Try column counts from compact to wide; pick the first that keeps min width.
+	const maxColumns = Math.min(tubeCount, 7)
+	let columns = Math.min(Math.max(Math.ceil(Math.sqrt(tubeCount)), 3), maxColumns)
+
+	for (let candidate = maxColumns; candidate >= 3; candidate -= 1) {
+		const width = Math.floor((usableWidth - gap * (candidate - 1)) / candidate)
+		if (width >= MIN_TUBE_WIDTH) {
+			columns = Math.min(candidate, tubeCount)
+			break
+		}
+	}
+	columns = Math.min(columns, tubeCount)
+
+	const rowCount = Math.ceil(tubeCount / columns)
+	const tubeWidth = Math.max(
+		MIN_TUBE_WIDTH,
+		Math.min(
+			MAX_TUBE_WIDTH,
+			Math.floor((usableWidth - gap * (columns - 1)) / columns),
+		),
 	)
 
-	const usableHeight = Math.max(safeHeight - rowGap * (rowCount - 1) - spacing.md, 1)
-	const tubeHeight = Math.min(
-		200,
-		Math.max(110, Math.floor(usableHeight / rowCount) - spacing.sm),
+	const usableHeight = Math.max(safeHeight - rowGap * (rowCount - 1) - spacing.sm, 1)
+	const tubeHeight = Math.max(
+		MIN_TUBE_HEIGHT,
+		Math.min(MAX_TUBE_HEIGHT, Math.floor(usableHeight / rowCount) - spacing.xs),
 	)
 
 	const rows: number[][] = []
@@ -112,10 +148,6 @@ function computeTubeLayout(
 	return { rows, tubeWidth, tubeHeight, gap, rowGap }
 }
 
-/**
- * Optional helper for parents that measure via onLayout.
- * Exported for tests / future adaptive wrappers.
- */
 export function measureBoardArea(event: LayoutChangeEvent): {
 	width: number
 	height: number
@@ -130,7 +162,7 @@ const styles = StyleSheet.create({
 		width: '100%',
 		alignItems: 'center',
 		justifyContent: 'center',
-		paddingHorizontal: spacing.lg,
+		paddingHorizontal: spacing.md,
 	},
 	row: {
 		flexDirection: 'row',

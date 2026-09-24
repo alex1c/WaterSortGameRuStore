@@ -28,6 +28,12 @@ export interface GameStatistics {
 	withoutHintLevelNumbers: number[]
 	withoutUndoLevelNumbers: number[]
 	withoutRestartLevelNumbers: number[]
+	/**
+	 * Free Play completions (non-campaign).
+	 * Do NOT feed campaign milestone achievements.
+	 */
+	freePlayCompleted: number
+	freePlayCompletedByDifficulty: Record<CampaignDifficultyBand, number>
 }
 
 /** Flags for the current open attempt of a level. */
@@ -59,6 +65,14 @@ export function createEmptyStatistics(): GameStatistics {
 		withoutHintLevelNumbers: [],
 		withoutUndoLevelNumbers: [],
 		withoutRestartLevelNumbers: [],
+		freePlayCompleted: 0,
+		freePlayCompletedByDifficulty: {
+			BEGINNER: 0,
+			EASY: 0,
+			MEDIUM: 0,
+			HARD: 0,
+			EXPERT: 0,
+		},
 	}
 }
 

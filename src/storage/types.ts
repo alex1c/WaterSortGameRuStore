@@ -13,15 +13,18 @@ import {
 	createEmptyAchievementState,
 	type AchievementState,
 } from '../achievements'
+import {
+	createEmptyFreePlayState,
+	type PersistedFreePlayState,
+} from '../freePlay'
 
 /**
- * Schema v4: campaign extended to 1000 levels.
- * v3 `campaignComplete=true` meant the old 100-level milestone — must NOT
- * mean all 1000 levels are done after upgrade.
+ * Schema v5: Free Play session isolated from Campaign.
+ * v1–v4 migrate: freePlay defaults to empty; campaign progress preserved.
  */
-export const STORAGE_SCHEMA_VERSION = 4
+export const STORAGE_SCHEMA_VERSION = 5
 
-export const LEGACY_STORAGE_SCHEMA_VERSIONS = [1, 2, 3] as const
+export const LEGACY_STORAGE_SCHEMA_VERSIONS = [1, 2, 3, 4] as const
 
 export const STORAGE_KEY = 'watersort.campaign.v1'
 
@@ -48,6 +51,8 @@ export interface PersistedGameState {
 	settings: GameSettings
 	statistics: GameStatistics
 	achievements: AchievementState
+	/** Isolated Free Play state — never shares Campaign session boards. */
+	freePlay: PersistedFreePlayState
 }
 
 export function createDefaultPersistedState(): PersistedGameState {
@@ -61,5 +66,6 @@ export function createDefaultPersistedState(): PersistedGameState {
 		settings: { ...DEFAULT_GAME_SETTINGS },
 		statistics: createEmptyStatistics(),
 		achievements: createEmptyAchievementState(),
+		freePlay: createEmptyFreePlayState(),
 	}
 }

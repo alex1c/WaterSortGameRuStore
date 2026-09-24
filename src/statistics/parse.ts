@@ -30,6 +30,18 @@ export function parseGameStatistics(value: unknown): GameStatistics {
 			completedByDifficulty[key] = asNonNegInt(raw[key], 0)
 		}
 	}
+	const freePlayCompletedByDifficulty = {
+		...empty.freePlayCompletedByDifficulty,
+	}
+	if (
+		record.freePlayCompletedByDifficulty &&
+		typeof record.freePlayCompletedByDifficulty === 'object'
+	) {
+		const raw = record.freePlayCompletedByDifficulty as Record<string, unknown>
+		for (const key of DIFFICULTIES) {
+			freePlayCompletedByDifficulty[key] = asNonNegInt(raw[key], 0)
+		}
+	}
 	return {
 		levelsCompleted: asNonNegInt(record.levelsCompleted, 0),
 		totalPours: asNonNegInt(record.totalPours, 0),
@@ -38,13 +50,20 @@ export function parseGameStatistics(value: unknown): GameStatistics {
 		restartsUsed: asNonNegInt(record.restartsUsed, 0),
 		levelsCompletedWithoutHint: asNonNegInt(record.levelsCompletedWithoutHint, 0),
 		levelsCompletedWithoutUndo: asNonNegInt(record.levelsCompletedWithoutUndo, 0),
-		levelsCompletedWithoutRestart: asNonNegInt(record.levelsCompletedWithoutRestart, 0),
+		levelsCompletedWithoutRestart: asNonNegInt(
+			record.levelsCompletedWithoutRestart,
+			0,
+		),
 		highestLevelCompleted: asNonNegInt(record.highestLevelCompleted, 0),
 		completedByDifficulty,
 		completedLevelNumbers: asLevelNumberList(record.completedLevelNumbers),
 		withoutHintLevelNumbers: asLevelNumberList(record.withoutHintLevelNumbers),
 		withoutUndoLevelNumbers: asLevelNumberList(record.withoutUndoLevelNumbers),
-		withoutRestartLevelNumbers: asLevelNumberList(record.withoutRestartLevelNumbers),
+		withoutRestartLevelNumbers: asLevelNumberList(
+			record.withoutRestartLevelNumbers,
+		),
+		freePlayCompleted: asNonNegInt(record.freePlayCompleted, 0),
+		freePlayCompletedByDifficulty,
 	}
 }
 
@@ -178,6 +197,25 @@ export function recordLevelCompletion(
 	}
 
 	return { stats: next, wasFirstCompletion: !already }
+}
+
+/**
+ * Record a Free Play completion.
+ * Does NOT touch campaign levelsCompleted / milestone counters.
+ * Updates freePlayCompleted* and may feed difficulty achievements.
+ */
+export function recordFreePlayCompletion(
+	stats: GameStatistics,
+	difficulty: CampaignDifficultyBand,
+): GameStatistics {
+	return {
+		...stats,
+		freePlayCompleted: stats.freePlayCompleted + 1,
+		freePlayCompletedByDifficulty: {
+			...stats.freePlayCompletedByDifficulty,
+			[difficulty]: stats.freePlayCompletedByDifficulty[difficulty] + 1,
+		},
+	}
 }
 
 function asNonNegInt(value: unknown, fallback: number): number {

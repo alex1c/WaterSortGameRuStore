@@ -153,7 +153,9 @@ export const ACHIEVEMENT_DEFINITIONS: readonly AchievementDefinition[] = [
 		title: 'Средняя глубина',
 		description: 'Пройдите уровень сложности «Средне»',
 		target: 1,
-		progressOf: (s) => s.completedByDifficulty.MEDIUM,
+		// Campaign or Free Play MEDIUM completion counts (PH8C product choice).
+		progressOf: (s) =>
+			s.completedByDifficulty.MEDIUM + s.freePlayCompletedByDifficulty.MEDIUM,
 		reconstructible: true,
 	},
 	{
@@ -161,7 +163,8 @@ export const ACHIEVEMENT_DEFINITIONS: readonly AchievementDefinition[] = [
 		title: 'Сложная задача',
 		description: 'Пройдите уровень сложности «Сложно»',
 		target: 1,
-		progressOf: (s) => s.completedByDifficulty.HARD,
+		progressOf: (s) =>
+			s.completedByDifficulty.HARD + s.freePlayCompletedByDifficulty.HARD,
 		reconstructible: true,
 	},
 	{
@@ -169,7 +172,8 @@ export const ACHIEVEMENT_DEFINITIONS: readonly AchievementDefinition[] = [
 		title: 'Эксперт',
 		description: 'Пройдите уровень сложности «Эксперт»',
 		target: 1,
-		progressOf: (s) => s.completedByDifficulty.EXPERT,
+		progressOf: (s) =>
+			s.completedByDifficulty.EXPERT + s.freePlayCompletedByDifficulty.EXPERT,
 		reconstructible: true,
 	},
 	{

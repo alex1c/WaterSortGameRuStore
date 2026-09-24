@@ -1,5 +1,5 @@
 /**
- * Lightweight in-app navigation routes for Phase 7.
+ * Lightweight in-app navigation routes.
  * Home is the stack root; Android Back pops toward Home.
  */
 export type AppRouteName =
@@ -10,14 +10,17 @@ export type AppRouteName =
 	| 'achievements'
 	| 'settings'
 	| 'about'
+	| 'free_play'
+	| 'free_play_game'
 
 export type AppRoute = { name: AppRouteName }
 
 /**
  * Deliberate Android Back targets (not a generic pop).
  *
- * TRAINING/GAME/LEVELS/STATISTICS/ACHIEVEMENTS/SETTINGS → Home
- * ABOUT → previous route (Settings) when present, else Home
+ * Most hub routes → Home
+ * ABOUT → previous (Settings) when present
+ * FREE_PLAY / FREE_PLAY_GAME → Home (preserve Free Play session)
  * HOME → null (system exit)
  */
 export function resolveBackTarget(stack: AppRoute[]): AppRouteName | null {
@@ -30,7 +33,6 @@ export function resolveBackTarget(stack: AppRoute[]): AppRouteName | null {
 		return previous?.name ?? 'home'
 	}
 
-	// Hub-adjacent routes always return to Home (preserve game session in memory).
 	return 'home'
 }
 

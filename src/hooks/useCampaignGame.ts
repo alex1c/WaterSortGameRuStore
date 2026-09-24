@@ -62,6 +62,11 @@ import {
 	type AttemptFlags,
 	type GameStatistics,
 } from '../statistics'
+import {
+	createEmptyFreePlayState,
+	type PersistedFreePlayState,
+} from '../freePlay'
+import { useFreePlayGame, type FreePlayController } from './useFreePlayGame'
 
 export type TrainingStep = 'pick-source' | 'pick-destination' | 'encourage' | 'done'
 
@@ -116,6 +121,7 @@ export interface CampaignGameController {
 	handleReplayLevel: () => void
 	openLevel: (levelNumber: number) => void
 	dismissCampaignFinished: () => void
+	freePlay: FreePlayController
 }
 
 export function useCampaignGame(): CampaignGameController {
@@ -163,6 +169,11 @@ export function useCampaignGame(): CampaignGameController {
 	const attemptRef = useRef<AttemptFlags>(createFreshAttemptFlags())
 	const animatingRef = useRef(false)
 	const completionLockRef = useRef<number | null>(null)
+	const freePlayRef = useRef<PersistedFreePlayState>(createEmptyFreePlayState())
+	const [initialFreePlay, setInitialFreePlay] = useState<PersistedFreePlayState>(
+		createEmptyFreePlayState,
+	)
+	const [freePlayTick, setFreePlayTick] = useState(0)
 
 	const showToast = useCallback((message: string) => {
 		if (toastTimerRef.current) clearTimeout(toastTimerRef.current)
@@ -302,6 +313,8 @@ export function useCampaignGame(): CampaignGameController {
 			settingsRef.current = saved.settings
 			statisticsRef.current = saved.statistics
 			achievementsRef.current = saved.achievements
+			freePlayRef.current = saved.freePlay
+			setInitialFreePlay(saved.freePlay)
 
 			setHighestUnlockedLevel(saved.highestUnlockedLevel)
 			setCampaignComplete(saved.campaignComplete)
@@ -350,6 +363,7 @@ export function useCampaignGame(): CampaignGameController {
 			settings: settingsRef.current,
 			statistics: statisticsRef.current,
 			achievements: achievementsRef.current,
+			freePlay: freePlayRef.current,
 			session: {
 				levelNumber,
 				seed,
@@ -377,6 +391,7 @@ export function useCampaignGame(): CampaignGameController {
 		statistics,
 		achievements,
 		attempt,
+		freePlayTick,
 	])
 
 	const updateSettings = useCallback((patch: Partial<GameSettings>) => {
@@ -669,6 +684,39 @@ export function useCampaignGame(): CampaignGameController {
 		moveCount > 0 ||
 		JSON.stringify(currentBoard) !== JSON.stringify(initialBoard)
 
+	const bumpFreePlayTick = useCallback(() => {
+		setFreePlayTick((value) => value + 1)
+	}, [])
+
+	const setStatisticsAndRef = useCallback((next: GameStatistics) => {
+		statisticsRef.current = next
+		setStatistics(next)
+	}, [])
+
+	const setAchievementsAndRef = useCallback((next: AchievementState) => {
+		achievementsRef.current = next
+		setAchievements(next)
+	}, [])
+
+	const setFreePlayState = useCallback(
+		(next: PersistedFreePlayState) => {
+			freePlayRef.current = next
+			bumpFreePlayTick()
+		},
+		[bumpFreePlayTick],
+	)
+
+	const freePlay = useFreePlayGame({
+		getSettings: () => settingsRef.current,
+		getStatistics: () => statisticsRef.current,
+		setStatistics: setStatisticsAndRef,
+		getAchievements: () => achievementsRef.current,
+		setAchievements: setAchievementsAndRef,
+		getFreePlay: () => freePlayRef.current,
+		setFreePlay: setFreePlayState,
+		initialFreePlay,
+	})
+
 	return {
 		ready,
 		levelNumber,
@@ -712,6 +760,7 @@ export function useCampaignGame(): CampaignGameController {
 		handleReplayLevel,
 		openLevel,
 		dismissCampaignFinished: () => setShowCampaignFinished(false),
+		freePlay,
 	}
 }
 

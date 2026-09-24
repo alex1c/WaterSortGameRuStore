@@ -14,6 +14,9 @@ export const ANALYTICS_EVENT_NAMES = [
 	'statistics_opened',
 	'achievements_opened',
 	'achievement_unlocked',
+	'free_play_opened',
+	'free_play_started',
+	'free_play_completed',
 ] as const
 
 export type AnalyticsEventName = (typeof ANALYTICS_EVENT_NAMES)[number]
@@ -39,6 +42,9 @@ const ALLOWED_PARAMETERS: Record<AnalyticsEventName, readonly string[]> = {
 	statistics_opened: [],
 	achievements_opened: [],
 	achievement_unlocked: ['achievement_id'],
+	free_play_opened: [],
+	free_play_started: ['difficulty'],
+	free_play_completed: ['difficulty', 'move_count'],
 }
 
 export type AnalyticsParameter = string | number | boolean

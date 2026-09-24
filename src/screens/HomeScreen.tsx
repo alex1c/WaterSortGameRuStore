@@ -13,6 +13,7 @@ interface HomeScreenProps {
 	hasMidLevelSession: boolean
 	onContinue: () => void
 	onOpenLevels: () => void
+	onOpenFreePlay: () => void
 	onOpenAchievements: () => void
 	onOpenStatistics: () => void
 	onOpenSettings: () => void
@@ -29,6 +30,7 @@ export function HomeScreen({
 	hasMidLevelSession,
 	onContinue,
 	onOpenLevels,
+	onOpenFreePlay,
 	onOpenAchievements,
 	onOpenStatistics,
 	onOpenSettings,
@@ -77,6 +79,15 @@ export function HomeScreen({
 					style={({ pressed }) => [styles.secondary, pressed && styles.pressed]}
 				>
 					<Text style={styles.secondaryLabel}>Уровни</Text>
+				</Pressable>
+
+				<Pressable
+					accessibilityRole="button"
+					onPress={onOpenFreePlay}
+					style={({ pressed }) => [styles.secondary, pressed && styles.pressed]}
+					testID="home-free-play"
+				>
+					<Text style={styles.secondaryLabel}>Свободная игра</Text>
 				</Pressable>
 
 				<View style={styles.row}>

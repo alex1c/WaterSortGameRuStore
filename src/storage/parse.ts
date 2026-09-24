@@ -14,6 +14,7 @@ import {
 	parseAchievementState,
 	reconstructAchievementsFromStats,
 } from '../achievements'
+import { parseFreePlayState } from '../freePlay'
 import {
 	STORAGE_SCHEMA_VERSION,
 	LEGACY_STORAGE_SCHEMA_VERSIONS,
@@ -24,12 +25,12 @@ import {
 
 /**
  * Pure parser used by tests and the async loader.
- * Accepts schema v1–v4. Never throws.
+ * Accepts schema v1–v5. Never throws.
  *
- * Migration notes (v3 → v4):
- * - If old `campaignComplete=true` (meaning Levels 1–100 done), clear the
- *   flag for the 1000-level campaign and unlock Level 101.
- * - Campaign unlocks / session / settings / stats / achievements preserved.
+ * Migration notes:
+ * - v3 → v4: old campaignComplete (100-level) unlocks 101, clears complete flag.
+ * - v4 → v5: freePlay defaults to empty; Campaign session untouched.
+ * - Corrupt freePlay subsection → empty Free Play only.
  * - Historical pours / hint / undo / restart counts are NOT invented.
  */
 export function parsePersistedGameState(raw: string): PersistedGameState {
@@ -63,6 +64,7 @@ export function parsePersistedGameState(raw: string): PersistedGameState {
 		const tutorialCompleted = record.tutorialCompleted === true
 		const session = parseSession(record.session)
 		const settings = parseGameSettings(record.settings)
+		const freePlay = parseFreePlayState(record.freePlay)
 
 		// v3 (and earlier) campaignComplete meant the 100-level milestone.
 		if (incomingSchema <= 3 && campaignComplete) {
@@ -100,6 +102,7 @@ export function parsePersistedGameState(raw: string): PersistedGameState {
 			settings,
 			statistics,
 			achievements,
+			freePlay,
 		}
 	} catch {
 		return fallback

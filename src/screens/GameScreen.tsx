@@ -9,7 +9,7 @@ import {
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
-import { AdBannerPlaceholder } from '../components/AdBannerPlaceholder'
+import { BannerSlot } from '../components/BannerSlot'
 import { GameControls } from '../components/GameControls'
 import { GameHeader } from '../components/GameHeader'
 import { TrainingHint } from '../components/TrainingHint'
@@ -120,7 +120,7 @@ export function GameScreen({ onOpenLevels, onOpenSettings }: GameScreenProps) {
 					onRestart={requestRestart}
 					canUndo={game.canUndo}
 				/>
-				<AdBannerPlaceholder />
+				<BannerSlot placement="game" testID="ad-banner-game" />
 				<View
 					style={{ height: insets.bottom, backgroundColor: uiColors.surfaceMuted }}
 					testID="bottom-safe-area-spacer"

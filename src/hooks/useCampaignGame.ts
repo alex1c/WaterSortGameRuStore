@@ -38,6 +38,8 @@ import {
 } from '../storage'
 import { isPersistedSessionCompatible } from '../storage/sessionCompatibility'
 import type { PaletteMode } from '../theme'
+import { maybeShowInterstitialAfterLevelCompleted } from '../ads'
+import { trackEvent } from '../analytics'
 
 export type TrainingStep = 'pick-source' | 'pick-destination' | 'encourage' | 'done'
 
@@ -207,9 +209,14 @@ export function useCampaignGame(): CampaignGameController {
 
 			if (level.levelNumber === 1 && !tutorialDone) {
 				setTrainingStep(moves > 0 ? 'encourage' : 'pick-source')
+				if (moves === 0) trackEvent('tutorial_started', { level_number: 1 })
 			} else {
 				setTrainingStep('done')
 			}
+			trackEvent('level_started', {
+				level_number: level.levelNumber,
+				difficulty: level.campaignBand,
+			})
 		},
 		[clearPourAnimation],
 	)
@@ -294,6 +301,7 @@ export function useCampaignGame(): CampaignGameController {
 		const next = { ...settingsRef.current, ...patch }
 		settingsRef.current = next
 		setSettings(next)
+		trackEvent('settings_changed', patch)
 		if (patch.soundsEnabled !== undefined) {
 			setSoundsEnabled(patch.soundsEnabled)
 		}
@@ -362,6 +370,14 @@ export function useCampaignGame(): CampaignGameController {
 
 			if (isSolved(nextBoard)) {
 				setIsLevelSolved(true)
+				trackEvent('level_completed', {
+					level_number: levelNumber,
+					difficulty: difficultyBand,
+					move_count: moveCount + 1,
+				})
+				void maybeShowInterstitialAfterLevelCompleted({
+					isTutorial: levelNumber === 1,
+				})
 				void hapticSuccess(settingsRef.current.hapticsEnabled)
 				void playWinSound()
 				const unlocked = nextUnlockAfterClearing(
@@ -372,11 +388,16 @@ export function useCampaignGame(): CampaignGameController {
 				setHighestUnlockedLevel(unlocked)
 
 				if (levelNumber === 1) {
+					trackEvent('tutorial_completed', {
+						level_number: 1,
+						move_count: moveCount + 1,
+					})
 					tutorialCompletedRef.current = true
 					setTutorialCompleted(true)
 					setTrainingStep('done')
 				}
 				if (levelNumber === 100) {
+					trackEvent('campaign_completed', { level_number: 100 })
 					campaignCompleteRef.current = true
 					setCampaignComplete(true)
 				}
@@ -384,9 +405,11 @@ export function useCampaignGame(): CampaignGameController {
 		},
 		[
 			currentBoard,
+			difficultyBand,
 			flashInvalid,
 			isLevelSolved,
 			levelNumber,
+			moveCount,
 			selectedTube,
 			startPourAnimation,
 			trainingStep,
@@ -404,6 +427,7 @@ export function useCampaignGame(): CampaignGameController {
 		const history = [...moveHistory]
 		const previous = history.pop()
 		if (!previous) return
+		trackEvent('undo_used', { level_number: levelNumber })
 		setMoveHistory(history)
 		setCurrentBoard(previous)
 		setMoveCount((count) => Math.max(0, count - 1))
@@ -411,9 +435,12 @@ export function useCampaignGame(): CampaignGameController {
 		setHintMove(null)
 		setHintMessage(null)
 		setIsLevelSolved(false)
-	}, [clearPourAnimation, moveHistory, showToast])
+	}, [clearPourAnimation, levelNumber, moveHistory, showToast])
 
 	const handleRestart = useCallback(() => {
+		if (moveCount > 0) {
+			trackEvent('level_restarted', { level_number: levelNumber })
+		}
 		clearPourAnimation()
 		setCurrentBoard(cloneBoard(initialBoard))
 		setMoveHistory([])
@@ -425,7 +452,7 @@ export function useCampaignGame(): CampaignGameController {
 		if (levelNumber === 1 && !tutorialCompletedRef.current) {
 			setTrainingStep('pick-source')
 		}
-	}, [clearPourAnimation, initialBoard, levelNumber])
+	}, [clearPourAnimation, initialBoard, levelNumber, moveCount])
 
 	const shouldConfirmRestart = useCallback(() => {
 		if (moveCount === 0) return false
@@ -452,22 +479,27 @@ export function useCampaignGame(): CampaignGameController {
 			}
 			setSelectedTube(null)
 			setHintMove(move)
+			trackEvent('hint_used', {
+				level_number: levelNumber,
+				difficulty: difficultyBand,
+			})
 			setHintMessage('Перелейте отсюда → сюда')
 		} catch {
 			showToast('Подсказка недоступна')
 			setHintMove(null)
 			setHintMessage(null)
 		}
-	}, [currentBoard, isLevelSolved, showToast])
+	}, [currentBoard, difficultyBand, isLevelSolved, levelNumber, showToast])
 
 	const openLevel = useCallback(
 		(targetLevel: number) => {
 			if (targetLevel < 1 || targetLevel > highestUnlockedRef.current) {
 				showToast('Уровень ещё закрыт')
 				return
-			}
-			const level = createCampaignLevel(targetLevel)
-			hydrateLevel(level, { tutorialDone: tutorialCompletedRef.current })
+		}
+		const level = createCampaignLevel(targetLevel)
+		trackEvent('level_selected', { level_number: targetLevel })
+		hydrateLevel(level, { tutorialDone: tutorialCompletedRef.current })
 		},
 		[hydrateLevel, showToast],
 	)

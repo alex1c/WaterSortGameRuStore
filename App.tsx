@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { StatusBar } from 'expo-status-bar'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
 
@@ -6,6 +6,8 @@ import { CampaignGameProvider, useSharedCampaignGame } from './src/hooks/Campaig
 import { GameScreen } from './src/screens/GameScreen'
 import { LevelSelectScreen } from './src/screens/LevelSelectScreen'
 import { SettingsScreen } from './src/screens/SettingsScreen'
+import { initializeAds, preloadInterstitial } from './src/ads'
+import { initializeAnalytics, trackEvent } from './src/analytics'
 
 type AppScreen = 'game' | 'levels' | 'settings'
 
@@ -14,6 +16,13 @@ type AppScreen = 'game' | 'levels' | 'settings'
  * reports real Android window insets on device.
  */
 export default function App() {
+	useEffect(() => {
+		initializeAnalytics()
+		initializeAds()
+		trackEvent('app_started')
+		void preloadInterstitial()
+	}, [])
+
 	return (
 		<SafeAreaProvider>
 			<StatusBar style="dark" />

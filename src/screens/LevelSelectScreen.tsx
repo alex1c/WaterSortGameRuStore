@@ -7,7 +7,7 @@ import {
 	isLevelUnlocked,
 } from '../campaign'
 import { spacing, uiColors } from '../theme'
-import { AdBannerPlaceholder } from '../components/AdBannerPlaceholder'
+import { BannerSlot } from '../components/BannerSlot'
 
 interface LevelSelectScreenProps {
 	currentLevel: number
@@ -111,7 +111,7 @@ export function LevelSelectScreen({
 			</ScrollView>
 
 			<View style={styles.bottomStack}>
-				<AdBannerPlaceholder />
+				<BannerSlot placement="levels" testID="ad-banner-levels" />
 				<View style={{ height: insets.bottom, backgroundColor: uiColors.surfaceMuted }} />
 			</View>
 		</View>

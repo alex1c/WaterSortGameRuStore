@@ -1,7 +1,22 @@
-import { Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native'
+import {
+	Alert,
+	Linking,
+	Pressable,
+	ScrollView,
+	StyleSheet,
+	Switch,
+	Text,
+	View,
+} from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
-import { AdBannerPlaceholder } from '../components/AdBannerPlaceholder'
+import { BannerSlot } from '../components/BannerSlot'
+import {
+	ABOUT_APP_NAME,
+	ABOUT_DEVELOPER,
+	ABOUT_OTHER_APPS_URL,
+	ABOUT_WEBSITE_URL,
+} from '../about/config'
 import {
 	animationSpeedLabelRu,
 	colorModeLabelRu,
@@ -10,6 +25,16 @@ import {
 } from '../settings'
 import type { PaletteMode } from '../theme'
 import { spacing, uiColors } from '../theme'
+
+async function openExternalUrl(url: string) {
+	try {
+		const supported = await Linking.canOpenURL(url)
+		if (!supported) throw new Error('URL is not supported')
+		await Linking.openURL(url)
+	} catch {
+		Alert.alert('Не удалось открыть ссылку', 'Проверьте подключение к интернету.')
+	}
+}
 
 interface SettingsScreenProps {
 	settings: GameSettings
@@ -139,18 +164,38 @@ export function SettingsScreen({
 
 				<Text style={styles.section}>О программе</Text>
 				<View style={styles.aboutCard}>
-					<Text style={styles.aboutTitle}>Water Sort</Text>
-					<Text style={styles.aboutBody}>ForestMusic · RuStore</Text>
+					<Text style={styles.aboutTitle}>{ABOUT_APP_NAME}</Text>
+					<Text style={styles.aboutBody}>Разработчик: {ABOUT_DEVELOPER}</Text>
 					<Text style={styles.aboutBody}>Кампания: уровни 1–100</Text>
 					<Text style={styles.aboutBody}>Версия 1.0.0</Text>
+					<AboutLink
+						label="Сайт ForestMusic"
+						onPress={() => void openExternalUrl(ABOUT_WEBSITE_URL)}
+					/>
+					<AboutLink
+						label="Другие наши приложения"
+						onPress={() => void openExternalUrl(ABOUT_OTHER_APPS_URL)}
+					/>
 				</View>
 			</ScrollView>
 
 			<View style={styles.bottomStack}>
-				<AdBannerPlaceholder />
+				<BannerSlot placement="information" testID="ad-banner-information" />
 				<View style={{ height: insets.bottom, backgroundColor: uiColors.surfaceMuted }} />
 			</View>
 		</View>
+	)
+}
+
+function AboutLink({ label, onPress }: { label: string; onPress: () => void }) {
+	return (
+		<Pressable
+			accessibilityRole="link"
+			onPress={onPress}
+			style={({ pressed }) => [styles.aboutLink, pressed && styles.pressed]}
+		>
+			<Text style={styles.aboutLinkLabel}>{label}</Text>
+		</Pressable>
 	)
 }
 
@@ -312,6 +357,14 @@ const styles = StyleSheet.create({
 		fontSize: 15,
 		fontWeight: '700',
 		color: uiColors.textPrimary,
+	},
+	aboutLink: {
+		paddingVertical: 6,
+	},
+	aboutLinkLabel: {
+		fontSize: 13,
+		fontWeight: '700',
+		color: uiColors.tubeSelected,
 	},
 	hint: {
 		fontSize: 12,

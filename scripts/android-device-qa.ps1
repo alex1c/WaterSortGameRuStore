@@ -1,415 +1,611 @@
-<#
-.SYNOPSIS
-  Safe Android device QA helper for Water Sort (ForestMusic / RuStore).
-
-.DESCRIPTION
-  Automates checks and prints copy-paste commands for launching the Expo
-  development client against a real Android phone on Metro port 8081.
-
-  SAFETY: this script NEVER automatically:
-    - kills unknown processes
-    - runs gradlew clean
-    - deletes node_modules / android / caches
-    - runs npm install / npm ci without demonstrated need
-    - runs expo prebuild --clean
-    - starts a heavy API37 AVD
-    - changes tracked source or app version
-    - silently switches Metro to 8082/8083
-
-.PARAMETER SkipAdbReverse
-  Skip adb reverse tcp:8081 tcp:8081.
-
-.PARAMETER ShowLogcatHelp
-  Print PID-filtered logcat helper commands.
-
-.EXAMPLE
-  powershell -ExecutionPolicy Bypass -File ./scripts/android-device-qa.ps1
-#>
-
 [CmdletBinding()]
 param(
-	[switch]$SkipAdbReverse,
-	[switch]$ShowLogcatHelp
+	[switch]$Build,
+	[switch]$Logcat,
+	[string]$ProjectPath
 )
 
-$ErrorActionPreference = 'Continue'
+Set-StrictMode -Version Latest
+$ErrorActionPreference = 'Stop'
 
-function Write-Section {
-	param([string]$Title)
-	Write-Host ''
-	Write-Host ('=' * 72) -ForegroundColor Cyan
-	Write-Host $Title -ForegroundColor Cyan
-	Write-Host ('=' * 72) -ForegroundColor Cyan
+$MetroPort = 8081
+$MetroStatusUrl = "http://127.0.0.1:$MetroPort/status"
+$DevClientHost = '127.0.0.1'
+$script:ProjectRoot = $null
+$script:LocationPushed = $false
+
+function Write-Stage([string]$Title) {
+	Write-Host ""
+	Write-Host "[$Title]" -ForegroundColor Cyan
 }
 
-function Write-Ok {
-	param([string]$Message)
-	Write-Host "[OK]  $Message" -ForegroundColor Green
+function Write-Pass([string]$Message) {
+	Write-Host "[PASS] $Message" -ForegroundColor Green
 }
 
-function Write-Warn {
-	param([string]$Message)
+function Write-Warn([string]$Message) {
 	Write-Host "[WARN] $Message" -ForegroundColor Yellow
 }
 
-function Write-Fail {
-	param([string]$Message)
-	Write-Host "[FAIL] $Message" -ForegroundColor Red
+function Stop-QA([string]$Layer, [string]$Reason, [string]$Suggestion) {
+	throw "QA_STOP|$Layer|$Reason|$Suggestion"
 }
 
-function Write-Info {
-	param([string]$Message)
-	Write-Host "[INFO] $Message" -ForegroundColor Gray
-}
-
-# ---------------------------------------------------------------------------
-# Project constants (Water Sort / RuStore)
-# ---------------------------------------------------------------------------
-$PackageName = 'com.calculatorplatform.watersort'
-$ExpoScheme = 'water-sort'
-$MetroPort = 8081
-$AltPorts = @(8082, 8083)
-$AppDisplayName = 'Water Sort'
-
-# Resolve repo root from this script location (scripts/ -> root).
-$ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
-$ProjectRoot = Resolve-Path (Join-Path $ScriptDir '..')
-
-Write-Section -Title '1. Project root'
-Write-Info "Script: $ScriptDir"
-Write-Info "Root:   $ProjectRoot"
-Set-Location $ProjectRoot
-
-$requiredMarkers = @('package.json', 'app.json', 'App.tsx')
-$missing = @()
-foreach ($marker in $requiredMarkers) {
-	if (-not (Test-Path (Join-Path $ProjectRoot $marker))) {
-		$missing += $marker
-	}
-}
-if ($missing.Count -gt 0) {
-	Write-Fail "Missing project markers: $($missing -join ', ')"
-	Write-Warn 'Aborting further checks - wrong directory?'
-	exit 1
-}
-Write-Ok "Project markers found ($($requiredMarkers -join ', '))"
-
-# ---------------------------------------------------------------------------
-# Git status (informational only - never modifies)
-# ---------------------------------------------------------------------------
-Write-Section -Title '2. Git status'
-if (Test-Path (Join-Path $ProjectRoot '.git')) {
-	try {
-		$branch = git rev-parse --abbrev-ref HEAD 2>$null
-		$sha = git rev-parse --short HEAD 2>$null
-		Write-Info "Branch: $branch"
-		Write-Info "HEAD:   $sha"
-		git status --short --branch
-		Write-Ok 'Git status printed (read-only)'
-	} catch {
-		Write-Warn "Git commands failed: $($_.Exception.Message)"
-	}
-} else {
-	Write-Warn 'No .git directory - skip git checks'
-}
-
-# ---------------------------------------------------------------------------
-# Android SDK + local.properties
-# ---------------------------------------------------------------------------
-Write-Section -Title '3. Android SDK / local.properties'
-
-function Find-AndroidSdk {
-	$candidates = @()
-	if ($env:ANDROID_HOME) { $candidates += $env:ANDROID_HOME }
-	if ($env:ANDROID_SDK_ROOT) { $candidates += $env:ANDROID_SDK_ROOT }
-	$candidates += Join-Path $env:LOCALAPPDATA 'Android\Sdk'
-	$candidates += 'C:\Android\Sdk'
-	foreach ($path in ($candidates | Select-Object -Unique)) {
-		if ($path -and (Test-Path $path)) {
-			return (Resolve-Path $path).Path
+function Resolve-Executable([string[]]$Names) {
+	foreach ($name in $Names) {
+		$command = Get-Command $name -ErrorAction SilentlyContinue
+		if ($null -ne $command) {
+			return $command.Source
 		}
 	}
 	return $null
 }
 
-$sdkPath = Find-AndroidSdk
-if ($sdkPath) {
-	Write-Ok "Android SDK found: $sdkPath"
-} else {
-	Write-Fail 'Android SDK not found (ANDROID_HOME / ANDROID_SDK_ROOT / %LOCALAPPDATA%\Android\Sdk)'
-}
+function Invoke-NativeCommand {
+	param(
+		[string]$FilePath,
+		[string[]]$Arguments,
+		[switch]$AllowNonZero
+	)
 
-$androidDir = Join-Path $ProjectRoot 'android'
-$localProps = Join-Path $androidDir 'local.properties'
-
-if (-not (Test-Path $androidDir)) {
-	Write-Warn 'android/ folder missing (Expo CNG - generate later with: npx expo prebuild --platform android)'
-	Write-Info 'local.properties will be created when android/ exists and SDK is known.'
-} else {
-	Write-Ok 'android/ directory exists'
-	if (Test-Path $localProps) {
-		Write-Ok "local.properties exists: $localProps"
-		Get-Content $localProps | ForEach-Object { Write-Info $_ }
-	} elseif ($sdkPath) {
-		# Safe create only - does not delete or overwrite existing files.
-		$sdkEscaped = $sdkPath -replace '\\', '\\'
-		$content = "sdk.dir=$sdkEscaped"
-		Set-Content -Path $localProps -Value $content -Encoding ASCII
-		Write-Ok "Created local.properties with sdk.dir=$sdkPath"
-	} else {
-		Write-Fail 'Cannot create local.properties - SDK path unknown'
-	}
-}
-
-# ---------------------------------------------------------------------------
-# adb devices - prefer real hardware
-# ---------------------------------------------------------------------------
-Write-Section -Title '4. adb devices'
-
-$adbCmd = Get-Command adb -ErrorAction SilentlyContinue
-if (-not $adbCmd -and $sdkPath) {
-	$platformToolsAdb = Join-Path $sdkPath 'platform-tools\adb.exe'
-	if (Test-Path $platformToolsAdb) {
-		$env:Path = "$(Split-Path $platformToolsAdb);$env:Path"
-		$adbCmd = Get-Command adb -ErrorAction SilentlyContinue
-	}
-}
-
-$PreferredSerial = $null
-if (-not $adbCmd) {
-	Write-Fail 'adb not available on PATH'
-} else {
-	Write-Ok "adb: $($adbCmd.Source)"
-	Write-Host ''
-	adb devices -l
-	Write-Host ''
-
-	$deviceLines = adb devices | Select-Object -Skip 1 | Where-Object { $_ -match '\S' }
-	$ready = @($deviceLines | Where-Object { $_ -match '\tdevice(\s|$)' })
-	$emulators = @($ready | Where-Object { $_ -match 'emulator-' })
-	$physical = @($ready | Where-Object { $_ -notmatch 'emulator-' })
-
-	if ($physical.Count -gt 0) {
-		Write-Ok "Preferring real device(s): $($physical.Count) connected"
-		$PreferredSerial = ($physical[0] -split '\s+')[0]
-		Write-Info "Preferred serial: $PreferredSerial"
-	} elseif ($emulators.Count -gt 0) {
-		Write-Warn 'Only emulator(s) connected - ForestMusic QA prefers a real phone'
-		$PreferredSerial = ($emulators[0] -split '\s+')[0]
-	} else {
-		Write-Fail 'No adb device in "device" state'
-	}
-}
-
-# ---------------------------------------------------------------------------
-# Metro ports 8081 / 8082 / 8083 - never silently switch
-# ---------------------------------------------------------------------------
-Write-Section -Title '5. Metro ports (8081 preferred)'
-
-function Test-LocalPort {
-	param([int]$Port)
-	# Prefer a fast TcpClient probe - Test-NetConnection can hang for minutes
-	# on closed ports under some Windows firewall / ICMP policies.
-	$client = New-Object System.Net.Sockets.TcpClient
+	$previousErrorActionPreference = $ErrorActionPreference
+	$ErrorActionPreference = 'Continue'
 	try {
-		$async = $client.BeginConnect('127.0.0.1', $Port, $null, $null)
-		$ok = $async.AsyncWaitHandle.WaitOne(400)
-		if (-not $ok) {
+		$output = @(& $FilePath @Arguments 2>&1 | ForEach-Object { "$_" })
+		$exitCode = $LASTEXITCODE
+	} finally {
+		$ErrorActionPreference = $previousErrorActionPreference
+	}
+	if (-not $AllowNonZero -and $exitCode -ne 0) {
+		$detail = ($output -join [Environment]::NewLine).Trim()
+		if ($detail.Length -gt 1200) {
+			$detail = $detail.Substring([Math]::Max(0, $detail.Length - 1200))
+		}
+		Stop-QA 'External command' "$FilePath exited with code $exitCode. $detail" 'Run the command manually and inspect the first failing layer.'
+	}
+	return [PSCustomObject]@{
+		Output = $output
+		ExitCode = $exitCode
+	}
+}
+
+function Get-OptionalProperty($Object, [string]$Name) {
+	if ($null -eq $Object) {
+		return $null
+	}
+	$property = $Object.PSObject.Properties[$Name]
+	if ($null -eq $property) {
+		return $null
+	}
+	return $property.Value
+}
+
+function Get-FirstString($Value) {
+	foreach ($item in @($Value)) {
+		if ($null -ne $item -and "$item".Trim().Length -gt 0) {
+			return "$item".Trim()
+		}
+	}
+	return $null
+}
+
+function Get-ExpoConfig([string]$NpxPath) {
+	$result = Invoke-NativeCommand $NpxPath @('expo', 'config', '--json')
+	$text = ($result.Output -join [Environment]::NewLine)
+	$start = $text.IndexOf('{')
+	$end = $text.LastIndexOf('}')
+	if ($start -lt 0 -or $end -le $start) {
+		Stop-QA 'Expo config' 'npx expo config --json did not return parseable JSON.' 'Run npx expo config --json manually and inspect Expo CLI output.'
+	}
+	try {
+		return ($text.Substring($start, $end - $start + 1) | ConvertFrom-Json)
+	} catch {
+		Stop-QA 'Expo config' "Unable to parse Expo config JSON: $($_.Exception.Message)" 'Run npx expo config --json manually.'
+	}
+}
+
+function Get-SdkCandidates {
+	$candidates = @(
+		$env:ANDROID_HOME,
+		$env:ANDROID_SDK_ROOT,
+		$(if ($env:LOCALAPPDATA) { Join-Path $env:LOCALAPPDATA 'Android\Sdk' } else { $null }),
+		$(if ($env:USERPROFILE) { Join-Path $env:USERPROFILE 'AppData\Local\Android\Sdk' } else { $null })
+	)
+	return @($candidates | Where-Object { $_ -and "$($_)".Trim().Length -gt 0 } | Select-Object -Unique)
+}
+
+function Read-LocalSdkPath([string]$Path) {
+	if (-not (Test-Path -LiteralPath $Path)) {
+		return $null
+	}
+	$line = Get-Content -LiteralPath $Path | Where-Object { $_ -match '^\s*sdk\.dir=(.+)$' } | Select-Object -First 1
+	if ($null -eq $line) {
+		return $null
+	}
+	$value = ([regex]::Match($line, '^\s*sdk\.dir=(.+)$')).Groups[1].Value.Trim()
+	return $value.Replace('\\', '\')
+}
+
+function Get-PortListeners([int]$Port) {
+	try {
+		$connections = @(Get-NetTCPConnection -State Listen -LocalPort $Port -ErrorAction Stop)
+		return @($connections | ForEach-Object {
+			[PSCustomObject]@{
+				Pid = [int]$_.OwningProcess
+				Endpoint = "$($_.LocalAddress):$($_.LocalPort)"
+			}
+		} | Sort-Object Pid, Endpoint -Unique)
+	} catch {
+		$netstat = @(& netstat.exe -ano -p tcp 2>$null | ForEach-Object { "$_" })
+		$matches = @()
+		foreach ($line in $netstat) {
+			if ($line -match "^\s*TCP\s+\S+:$Port\s+\S+\s+LISTENING\s+(\d+)\s*$") {
+				$matches += [PSCustomObject]@{ Pid = [int]$Matches[1]; Endpoint = "netstat:$Port" }
+			}
+		}
+		return @($matches | Sort-Object Pid, Endpoint -Unique)
+	}
+}
+
+function Get-ProcessDetails([int]$ProcessId) {
+	try {
+		$process = Get-CimInstance Win32_Process -Filter "ProcessId=$ProcessId" -ErrorAction Stop
+		return [PSCustomObject]@{
+			Name = Get-FirstString $process.Name
+			Path = Get-FirstString $process.ExecutablePath
+			CommandLine = Get-FirstString $process.CommandLine
+		}
+	} catch {
+		try {
+			$process = Get-Process -Id $ProcessId -ErrorAction Stop
+			return [PSCustomObject]@{
+				Name = $process.ProcessName
+				Path = Get-FirstString $process.Path
+				CommandLine = $null
+			}
+		} catch {
+			return [PSCustomObject]@{ Name = $null; Path = $null; CommandLine = $null }
+		}
+	}
+}
+
+function Format-PortOwner([int]$ProcessId) {
+	$details = Get-ProcessDetails $ProcessId
+	$name = if ($details.Name) { $details.Name } else { 'unknown-process' }
+	$path = if ($details.Path) { $details.Path } else { 'path-unavailable' }
+	return "PID $ProcessId; process $name; path $path"
+}
+
+function Test-IPv4Port([int]$Port) {
+	$testNetConnection = Get-Command Test-NetConnection -ErrorAction SilentlyContinue
+	if ($null -ne $testNetConnection) {
+		try {
+			return [bool](Test-NetConnection -ComputerName 127.0.0.1 -Port $Port -InformationLevel Quiet -WarningAction SilentlyContinue)
+		} catch {
 			return $false
 		}
-		$client.EndConnect($async)
-		return $true
+	}
+	try {
+		$client = [System.Net.Sockets.TcpClient]::new()
+		$async = $client.BeginConnect('127.0.0.1', $Port, $null, $null)
+		$connected = $async.AsyncWaitHandle.WaitOne(500)
+		if ($connected -and $client.Connected) {
+			$client.Close()
+			return $true
+		}
+		$client.Close()
+		return $false
 	} catch {
 		return $false
-	} finally {
-		$client.Close()
 	}
 }
 
-function Get-PortListeners {
-	param([int]$Port)
+function Test-MetroHealth {
+	if (-not (Test-IPv4Port $MetroPort)) {
+		return $false
+	}
 	try {
-		return @(Get-NetTCPConnection -LocalPort $Port -State Listen -ErrorAction SilentlyContinue)
+		$response = Invoke-WebRequest -UseBasicParsing -Uri $MetroStatusUrl -TimeoutSec 3
+		$content = $response.Content
+		if ($content -is [byte[]]) {
+			$content = [Text.Encoding]::UTF8.GetString($content)
+		}
+		return "$content" -match 'packager-status\s*:\s*running'
 	} catch {
-		return @()
+		return $false
 	}
 }
 
-$port8081Open = Test-LocalPort -Port $MetroPort
-$listeners8081 = Get-PortListeners -Port $MetroPort
+function Test-CurrentProjectMetro([int]$ProcessId, [string]$Root) {
+	$details = Get-ProcessDetails $ProcessId
+	$commandLine = if ($details.CommandLine) { $details.CommandLine.ToLowerInvariant() } else { '' }
+	$rootToken = ([IO.Path]::GetFullPath($Root)).TrimEnd('\').ToLowerInvariant()
+	return $commandLine.Contains($rootToken) -and $commandLine -match 'expo[\\/].*\bstart\b'
+}
 
-if ($port8081Open) {
-	Write-Warn "Port $MetroPort is already accepting connections (Metro may already be running)"
-	foreach ($l in $listeners8081) {
-		$proc = Get-Process -Id $l.OwningProcess -ErrorAction SilentlyContinue
-		if ($proc) {
-			Write-Info "Listener PID $($proc.Id) ($($proc.ProcessName))"
+function Get-InstalledPackageInfo([string]$AdbPath, [string]$Serial, [string]$PackageName) {
+	$result = Invoke-NativeCommand $AdbPath @('-s', $Serial, 'shell', 'dumpsys', 'package', $PackageName) -AllowNonZero
+	$text = ($result.Output -join [Environment]::NewLine)
+	if ($result.ExitCode -ne 0 -or $text -notmatch [regex]::Escape($PackageName)) {
+		return $null
+	}
+	$versionName = $null
+	$versionCode = $null
+	$nameMatch = [regex]::Match($text, 'versionName=([^\s]+)')
+	$codeMatch = [regex]::Match($text, 'versionCode[=:](\d+)')
+	if ($nameMatch.Success) { $versionName = $nameMatch.Groups[1].Value }
+	if ($codeMatch.Success) { $versionCode = $codeMatch.Groups[1].Value }
+	return [PSCustomObject]@{ VersionName = $versionName; VersionCode = $versionCode }
+}
+
+<#
+function Invoke-PhoneMetroHealth([string]$AdbPath, [string]$Serial) {
+	$curl = Invoke-NativeCommand $AdbPath @('-s', $Serial, 'shell', 'command', '-v', 'curl') -AllowNonZero
+	if ($curl.ExitCode -eq 0 -and ($curl.Output -join '').Trim().Length -gt 0) {
+		$result = Invoke-NativeCommand $AdbPath @('-s', $Serial, 'shell', 'curl', '-s', '--max-time', '5', $MetroStatusUrl) -AllowNonZero
+		$text = ($result.Output -join [Environment]::NewLine)
+		if ($result.ExitCode -ne 0 -or $text -notmatch 'packager-status\s*:\s*running') {
+			#
+			#
+			#
+			Stop-QA 'Phone → Metro' 'Device curl reached no healthy Metro status.' 'Verify adb reverse and keep Metro on --host lan --port 8081.'
+			#
+			Stop-QA 'Phone to Metro' 'Device curl reached no healthy Metro status.' 'Verify adb reverse and keep Metro on --host lan --port 8081.'
+			#
+			Stop-QA 'Phone to Metro' 'Device wget reached no healthy Metro status.' 'Verify adb reverse and keep Metro on --host lan --port 8081.'
+		}
+		return 'curl'
+	}
+
+	$wget = Invoke-NativeCommand $AdbPath @('-s', $Serial, 'shell', 'command', '-v', 'wget') -AllowNonZero
+	if ($wget.ExitCode -eq 0 -and ($wget.Output -join '').Trim().Length -gt 0) {
+		$result = Invoke-NativeCommand $AdbPath @('-s', $Serial, 'shell', 'wget', '-q', '-O', '-', $MetroStatusUrl) -AllowNonZero
+		$text = ($result.Output -join [Environment]::NewLine)
+		if ($result.ExitCode -ne 0 -or $text -notmatch 'packager-status\s*:\s*running') {
+			Stop-QA 'Phone → Metro' 'Device wget reached no healthy Metro status.' 'Verify adb reverse and keep Metro on --host lan --port 8081.'
+		}
+			#
+			Stop-QA 'Phone to Metro' 'Device wget reached no healthy Metro status.' 'Verify adb reverse and keep Metro on --host lan --port 8081.'
+		}
+		return 'wget'
+	}
+	return $null
+}
+
+ #>
+function Invoke-PhoneMetroHealth([string]$AdbPath, [string]$Serial) {
+	$curl = Invoke-NativeCommand $AdbPath @('-s', $Serial, 'shell', 'command', '-v', 'curl') -AllowNonZero
+	if ($curl.ExitCode -eq 0 -and ($curl.Output -join '').Trim().Length -gt 0) {
+		$result = Invoke-NativeCommand $AdbPath @('-s', $Serial, 'shell', 'curl', '-s', '--max-time', '5', $MetroStatusUrl) -AllowNonZero
+		$text = ($result.Output -join [Environment]::NewLine)
+		if ($result.ExitCode -ne 0 -or $text -notmatch 'packager-status\s*:\s*running') {
+			Stop-QA 'Phone to Metro' 'Device curl reached no healthy Metro status.' 'Verify adb reverse and keep Metro on --host lan --port 8081.'
+		}
+		return 'curl'
+	}
+
+	$wget = Invoke-NativeCommand $AdbPath @('-s', $Serial, 'shell', 'command', '-v', 'wget') -AllowNonZero
+	if ($wget.ExitCode -eq 0 -and ($wget.Output -join '').Trim().Length -gt 0) {
+		$result = Invoke-NativeCommand $AdbPath @('-s', $Serial, 'shell', 'wget', '-q', '-O', '-', $MetroStatusUrl) -AllowNonZero
+		$text = ($result.Output -join [Environment]::NewLine)
+		if ($result.ExitCode -ne 0 -or $text -notmatch 'packager-status\s*:\s*running') {
+			Stop-QA 'Phone to Metro' 'Device wget reached no healthy Metro status.' 'Verify adb reverse and keep Metro on --host lan --port 8081.'
+		}
+		return 'wget'
+	}
+	return $null
+}
+
+try {
+	$scriptDirectory = Split-Path -Parent $MyInvocation.MyCommand.Path
+	$inferredRoot = Split-Path -Parent $scriptDirectory
+	if ($ProjectPath) {
+		if (-not (Test-Path -LiteralPath $ProjectPath -PathType Container)) {
+			Stop-QA 'Project' "ProjectPath does not exist: $ProjectPath" 'Pass a valid project root or omit -ProjectPath when the script is inside <project>\scripts.'
+		}
+		$script:ProjectRoot = (Resolve-Path -LiteralPath $ProjectPath).Path
+	} else {
+		$script:ProjectRoot = (Resolve-Path -LiteralPath $inferredRoot).Path
+	}
+	if (-not (Test-Path -LiteralPath (Join-Path $script:ProjectRoot 'package.json') -PathType Leaf)) {
+		Stop-QA 'Project' "package.json was not found at $script:ProjectRoot" 'Copy the script into <project>\scripts or pass -ProjectPath.'
+	}
+
+	Push-Location $script:ProjectRoot
+	$script:LocationPushed = $true
+	Write-Host '========================================' -ForegroundColor Cyan
+	Write-Host 'ForestMusic Android device QA startup' -ForegroundColor Cyan
+	Write-Host '========================================' -ForegroundColor Cyan
+	Write-Host "PROJECT: $script:ProjectRoot"
+	Write-Host "PATH: $scriptDirectory"
+	Write-Host "TIMESTAMP: $((Get-Date).ToString('o'))"
+
+	Write-Stage 'Git'
+	$git = Resolve-Executable @('git.exe', 'git')
+	if (-not $git) { Stop-QA 'Git' 'git was not found on PATH.' 'Install Git or add it to PATH.' }
+	$gitStatus = Invoke-NativeCommand $git @('status', '--short')
+	if (@($gitStatus.Output).Count -gt 0) {
+		$details = ($gitStatus.Output -join [Environment]::NewLine)
+		Write-Host $details -ForegroundColor Yellow
+		Stop-QA 'Git' 'Working tree is dirty; QA stopped before device actions.' 'Inspect the changes and rerun with an intentionally clean tree.'
+	}
+	$sha = (Invoke-NativeCommand $git @('rev-parse', 'HEAD')).Output | Select-Object -First 1
+	$branch = (Invoke-NativeCommand $git @('rev-parse', '--abbrev-ref', 'HEAD')).Output | Select-Object -First 1
+	Write-Host "SHA: $sha"
+	Write-Host "BRANCH: $branch"
+	Write-Pass 'Git'
+
+	Write-Stage 'Expo config'
+	$npx = Resolve-Executable @('npx.cmd', 'npx.exe', 'npx')
+	if (-not $npx) { Stop-QA 'Expo config' 'npx was not found on PATH.' 'Install Node.js/npm and ensure npx is available.' }
+	$expoConfig = Get-ExpoConfig $npx
+	$androidConfig = Get-OptionalProperty $expoConfig 'android'
+	$expoName = Get-FirstString (Get-OptionalProperty $expoConfig 'name')
+	$expoVersion = Get-FirstString (Get-OptionalProperty $expoConfig 'version')
+	$expoScheme = Get-FirstString (Get-OptionalProperty $expoConfig 'scheme')
+	$packageName = Get-FirstString (Get-OptionalProperty $androidConfig 'package')
+	$expectedVersionCode = Get-FirstString (Get-OptionalProperty $androidConfig 'versionCode')
+	if (-not $packageName) { Stop-QA 'Expo config' 'Resolved Expo config has no android.package.' 'Add a valid Android package to the app config.' }
+	if (-not $expoScheme) { Stop-QA 'Expo config' 'Resolved Expo config has no scheme.' 'Add a URL scheme to the app config before dev-client launch.' }
+	Write-Host "Name: $expoName"
+	Write-Host "Package: $packageName"
+	Write-Host "Version: $expoVersion"
+	Write-Host "VersionCode: $expectedVersionCode"
+	Write-Host "Scheme: $expoScheme"
+	Write-Pass 'Expo config'
+
+	Write-Stage 'Android SDK'
+	$androidDir = Join-Path $script:ProjectRoot 'android'
+	$localProperties = Join-Path $androidDir 'local.properties'
+	$sdkRoot = $null
+	foreach ($candidate in Get-SdkCandidates) {
+		if (Test-Path -LiteralPath $candidate -PathType Container) {
+			$sdkRoot = (Resolve-Path -LiteralPath $candidate).Path
+			break
 		}
 	}
-	Write-Warn 'Do NOT silently switch Metro to 8082. Reuse 8081 or stop the known Metro process yourself.'
-} else {
-	Write-Ok "Port $MetroPort is free"
-}
-
-foreach ($alt in $AltPorts) {
-	if (Test-LocalPort -Port $alt) {
-		Write-Warn "Port $alt is occupied - this script will NOT redirect Metro there"
-	} else {
-		Write-Info "Port $alt is free (unused by this helper)"
+	$localSdk = Read-LocalSdkPath $localProperties
+	if ($localSdk -and -not (Test-Path -LiteralPath $localSdk -PathType Container)) {
+		Stop-QA 'Android SDK' "android/local.properties points to missing SDK: $localSdk" 'Fix local.properties manually; this script will not overwrite an invalid existing setting.'
 	}
-}
+	if (-not $sdkRoot -and $localSdk) { $sdkRoot = $localSdk }
+	if (-not $sdkRoot) { Stop-QA 'Android SDK' 'Android SDK was not found in ANDROID_HOME, ANDROID_SDK_ROOT, or the default Windows SDK path.' 'Install/configure the Android SDK and rerun.' }
+	if ((Test-Path -LiteralPath $androidDir -PathType Container) -and -not (Test-Path -LiteralPath $localProperties -PathType Leaf)) {
+		$sdkForGradle = $sdkRoot.Replace('\', '/')
+		Set-Content -LiteralPath $localProperties -Value "sdk.dir=$sdkForGradle" -Encoding ascii
+		Write-Host "Created ignored android/local.properties with sdk.dir=$sdkForGradle"
+	}
+	Write-Host "SDK: $sdkRoot"
+	Write-Pass 'Android SDK'
 
-# ---------------------------------------------------------------------------
-# adb reverse for 8081
-# ---------------------------------------------------------------------------
-Write-Section -Title '6. adb reverse tcp:8081'
-if ($SkipAdbReverse) {
-	Write-Info 'Skipped (-SkipAdbReverse)'
-} elseif (-not $adbCmd) {
-	Write-Fail 'adb missing - cannot reverse'
-} elseif (-not $PreferredSerial) {
-	Write-Warn 'No preferred device - skip reverse'
-} else {
-	adb -s $PreferredSerial reverse tcp:$MetroPort tcp:$MetroPort
-	if ($LASTEXITCODE -eq 0) {
-		Write-Ok "adb -s $PreferredSerial reverse tcp:$MetroPort tcp:$MetroPort"
+	Write-Stage 'ADB device'
+	$adb = Join-Path $sdkRoot 'platform-tools\adb.exe'
+	if (-not (Test-Path -LiteralPath $adb -PathType Leaf)) { $adb = Resolve-Executable @('adb.exe', 'adb') }
+	if (-not $adb) { Stop-QA 'ADB' 'adb was not found in the Android SDK or PATH.' 'Install Android platform-tools and rerun.' }
+	$deviceResult = Invoke-NativeCommand $adb @('devices', '-l')
+	$deviceRows = @()
+	foreach ($line in $deviceResult.Output) {
+		if ($line -match '^([^\s]+)\s+([^\s]+)(?:\s+(.*))?$') {
+			$deviceRows += [PSCustomObject]@{ Serial = $Matches[1]; State = $Matches[2]; Details = $Matches[3] }
+		}
+	}
+	$unauthorized = @($deviceRows | Where-Object { $_.State -eq 'unauthorized' -and $_.Serial -notlike 'emulator-*' })
+	if ($unauthorized.Count -gt 0) { Stop-QA 'ADB device' "Device is unauthorized: $($unauthorized.Serial -join ', ')" 'Approve USB debugging on the phone, then rerun.' }
+	$realDevices = @($deviceRows | Where-Object { $_.State -eq 'device' -and $_.Serial -notlike 'emulator-*' })
+	if ($realDevices.Count -eq 0) { Stop-QA 'ADB device' 'No real Android device with status device was found.' 'Connect the OPPO/real device and approve USB debugging. This script will not start an AVD.' }
+	if ($realDevices.Count -ne 1) { Stop-QA 'ADB device' "Expected exactly one real device, found $($realDevices.Count): $($realDevices.Serial -join ', ')" 'Disconnect extra real devices and rerun.' }
+	$serial = $realDevices[0].Serial
+	$modelMatch = [regex]::Match("$($realDevices[0].Details)", 'model:([^\s]+)')
+	$model = if ($modelMatch.Success) { $modelMatch.Groups[1].Value } else { 'unknown-model' }
+	Write-Host "Serial: $serial"
+	Write-Host "Model: $model"
+	Write-Pass 'Device'
+
+	Write-Stage 'Metro ports'
+	$port8081 = @(Get-PortListeners 8081)
+	$port8082 = @(Get-PortListeners 8082)
+	$port8083 = @(Get-PortListeners 8083)
+	foreach ($portInfo in @(@{ Port = 8081; Items = $port8081 }, @{ Port = 8082; Items = $port8082 }, @{ Port = 8083; Items = $port8083 })) {
+		if (@($portInfo.Items).Count -eq 0) {
+			Write-Host "$($portInfo.Port): free"
+		} else {
+			Write-Host "$($portInfo.Port): occupied"
+			foreach ($item in $portInfo.Items) { Write-Host "  $(Format-PortOwner $item.Pid)" }
+		}
+	}
+	if ($port8082.Count -gt 0 -or $port8083.Count -gt 0) {
+		Write-Warn '8082/8083 are occupied. This script stays on the single-project Metro port 8081.'
+	}
+
+	$reuseMetro = $false
+	$metroOwnerPid = $null
+	if ($port8081.Count -gt 0) {
+		if (-not (Test-MetroHealth)) {
+			Stop-QA 'Metro port' '8081 is occupied but does not serve a healthy Metro /status response.' 'Identify the owner shown above and stop/reconcile it manually; this script will not kill it or switch ports.'
+		}
+		$currentProjectOwners = @($port8081 | Where-Object { Test-CurrentProjectMetro $_.Pid $script:ProjectRoot })
+		if ($currentProjectOwners.Count -ne 1) {
+			Stop-QA 'Metro port' 'A healthy 8081 listener could not be confidently identified as this project Metro.' 'Stop the unknown/stale Metro manually, then rerun from this project root.'
+		}
+		$reuseMetro = $true
+		$metroOwnerPid = $currentProjectOwners[0].Pid
+		Write-Host "REUSE NATIVE BUILD / EXISTING CURRENT-PROJECT METRO PID $metroOwnerPid"
+	}
+	Write-Pass 'Metro port'
+
+	Write-Stage 'Build decision'
+	if ($Build) {
+		Write-Host 'BUILD NATIVE DEBUG APK'
+		if (-not (Test-Path -LiteralPath $androidDir -PathType Container)) { Stop-QA 'Build' 'android/ does not exist.' 'Run Expo prebuild manually in the intended workflow; this v1 script will not prebuild.' }
+		$gradlew = Join-Path $androidDir 'gradlew.bat'
+		if (-not (Test-Path -LiteralPath $gradlew -PathType Leaf)) { Stop-QA 'Build' 'android/gradlew.bat was not found.' 'Verify the native Android project before rerunning.' }
+		Push-Location $androidDir
+		$previousNodeEnv = $env:NODE_ENV
+		$env:NODE_ENV = 'development'
+		try {
+			$buildResult = Invoke-NativeCommand $gradlew @('assembleDebug', '--console=plain')
+		} finally {
+			$env:NODE_ENV = $previousNodeEnv
+			Pop-Location
+		}
+		$buildText = ($buildResult.Output -join [Environment]::NewLine)
+		if ($buildText -notmatch 'BUILD SUCCESSFUL') { Stop-QA 'Build' 'Gradle exited successfully without the BUILD SUCCESSFUL marker.' 'Inspect the Gradle output manually.' }
+		Write-Pass 'Build'
+
+		$apkPath = Join-Path $androidDir 'app\build\outputs\apk\debug\app-debug.apk'
+		if (-not (Test-Path -LiteralPath $apkPath -PathType Leaf)) { Stop-QA 'APK' "Expected debug APK was not found: $apkPath" 'Inspect the assembleDebug output and Android build directory.' }
+		$apk = Get-Item -LiteralPath $apkPath
+		Write-Host "FullName: $($apk.FullName)"
+		Write-Host "Length: $($apk.Length)"
+		Write-Host "LastWriteTime: $($apk.LastWriteTime.ToString('o'))"
+		$installResult = Invoke-NativeCommand $adb @('-s', $serial, 'install', '-r', $apk.FullName)
+		if (($installResult.Output -join [Environment]::NewLine) -notmatch '(?m)^Success\s*$') { Stop-QA 'APK install' 'adb install did not report Success.' 'Run adb install -r manually and inspect the device response.' }
+		Write-Pass 'APK install'
 	} else {
-		Write-Fail 'adb reverse failed'
+		Write-Host 'REUSE NATIVE BUILD'
+		$packagePath = Invoke-NativeCommand $adb @('-s', $serial, 'shell', 'pm', 'path', $packageName) -AllowNonZero
+		if ($packagePath.ExitCode -ne 0 -or ($packagePath.Output -join '') -notmatch 'package:') { Stop-QA 'Installed app' "Package $packageName is not installed on the device." 'Run this script with -Build for native install verification.' }
+		Write-Pass 'Reuse installed native build'
+	}
+
+	Write-Stage 'Installed version'
+	$installed = Get-InstalledPackageInfo $adb $serial $packageName
+	if ($null -eq $installed) { Stop-QA 'Installed version' "Unable to read dumpsys package $packageName." 'Install a valid debug build and rerun.' }
+	Write-Host "Installed versionName: $($installed.VersionName)"
+	Write-Host "Installed versionCode: $($installed.VersionCode)"
+	if ($Build) {
+		if ($expoVersion -and $installed.VersionName -and $installed.VersionName -ne $expoVersion) { Stop-QA 'Installed version' "versionName mismatch: expected $expoVersion, installed $($installed.VersionName)." 'Inspect Expo config and the installed APK before continuing.' }
+		if ($expectedVersionCode -and $installed.VersionCode -and $installed.VersionCode -ne $expectedVersionCode) { Stop-QA 'Installed version' "versionCode mismatch: expected $expectedVersionCode, installed $($installed.VersionCode)." 'Inspect Expo config and the installed APK before continuing.' }
+	}
+	Write-Pass 'Installed version'
+
+	Write-Stage 'Metro startup'
+	if (-not $reuseMetro) {
+		$powershell = Resolve-Executable @('powershell.exe', 'powershell')
+		if (-not $powershell) { Stop-QA 'Metro startup' 'Windows PowerShell was not found.' 'Start Metro manually with --host lan --port 8081.' }
+		$quotedRoot = $script:ProjectRoot.Replace("'", "''")
+		$metroCommand = "`$env:NODE_ENV='development'; Set-Location -LiteralPath '$quotedRoot'; npx.cmd expo start --dev-client --host lan --port 8081"
+		$metroProcess = Start-Process -FilePath $powershell -ArgumentList @('-NoProfile', '-NoExit', '-Command', $metroCommand) -WorkingDirectory $script:ProjectRoot -PassThru
+		$metroOwnerPid = $metroProcess.Id
+		Write-Host "Started Metro PowerShell PID: $metroOwnerPid"
+	}
+	$deadline = (Get-Date).AddSeconds(60)
+	$metroReady = $false
+	do {
+		if (Test-MetroHealth) {
+			$metroReady = $true
+			break
+		}
+		Start-Sleep -Seconds 1
+	} while ((Get-Date) -lt $deadline)
+	if (-not $metroReady) { Stop-QA 'Metro startup' 'Timed out waiting for IPv4 127.0.0.1:8081 and /status packager-status:running.' 'Inspect the Metro PowerShell window; do not switch to 8082/8083.' }
+	Write-Host 'Metro: --dev-client --host lan --port 8081'
+	Write-Pass 'Metro IPv4'
+	Write-Pass 'Metro /status'
+
+	Write-Stage 'ADB reverse'
+	Invoke-NativeCommand $adb @('-s', $serial, 'reverse', '--remove-all') | Out-Null
+	Invoke-NativeCommand $adb @('-s', $serial, 'reverse', "tcp:$MetroPort", "tcp:$MetroPort") | Out-Null
+	$reverseList = Invoke-NativeCommand $adb @('-s', $serial, 'reverse', '--list')
+	$reverseText = ($reverseList.Output -join [Environment]::NewLine)
+	if ($reverseText -notmatch "tcp:$MetroPort\s+tcp:$MetroPort") { Stop-QA 'ADB reverse' "Required tcp:$MetroPort tcp:$MetroPort mapping was not reported." 'Run adb reverse manually and inspect the device connection.' }
+	Write-Host $reverseText
+	Write-Pass 'adb reverse'
+
+	<#
+	Write-Stage 'Phone → Metro'
+	#>
+	Write-Stage 'Phone to Metro'
+	$phoneHealthMethod = Invoke-PhoneMetroHealth $adb $serial
+	if ($phoneHealthMethod) {
+		Write-Host "Device health method: $phoneHealthMethod"
+		<#
+		Write-Pass 'Phone → Metro'
+	}
+		#>
+		Write-Pass 'Phone to Metro'
+	}
+	if (-not $phoneHealthMethod) {
+		Write-Warn 'Device has neither curl nor wget; phone-side HTTP health could not be verified.'
+	}
+
+	Write-Stage 'Dev client launch'
+	$devClientUrl = "$expoScheme`://expo-development-client/?url=http%3A%2F%2F127.0.0.1%3A$MetroPort"
+	Write-Host "URL: $devClientUrl"
+	$launchResult = Invoke-NativeCommand $adb @('-s', $serial, 'shell', 'am', 'start', '-a', 'android.intent.action.VIEW', '-d', $devClientUrl) -AllowNonZero
+	$launchText = ($launchResult.Output -join [Environment]::NewLine)
+	Write-Host $launchText
+	if ($launchResult.ExitCode -ne 0 -and $launchText -notmatch 'Activity not started, intent has been delivered to currently running top-most instance') {
+		Stop-QA 'Dev client launch' "adb am start failed with code $($launchResult.ExitCode). $launchText" 'Verify the discovered scheme and the installed development client.'
+	}
+	Write-Pass 'Dev client launched'
+
+	Write-Stage 'App PID'
+	$appPid = $null
+	$pidDeadline = (Get-Date).AddSeconds(12)
+	do {
+		$pidResult = Invoke-NativeCommand $adb @('-s', $serial, 'shell', 'pidof', $packageName) -AllowNonZero
+		$pidText = ($pidResult.Output -join ' ').Trim()
+		if ($pidText -match '\b(\d+)\b') {
+			$appPid = $Matches[1]
+			break
+		}
+		Start-Sleep -Milliseconds 500
+	} while ((Get-Date) -lt $pidDeadline)
+	if (-not $appPid) { Stop-QA 'App PID' "pidof $packageName returned no PID after launch." 'Verify the dev-client URL, installed package, and device screen manually.' }
+	Write-Host "PID: $appPid"
+	Write-Pass 'PID'
+
+	if ($Logcat) {
+		Write-Stage 'Logcat snapshot'
+		$logResult = Invoke-NativeCommand $adb @('-s', $serial, 'logcat', '-d', "--pid=$appPid", '-v', 'time', '-t', '120') -AllowNonZero
+		if ($logResult.Output.Count -gt 0) { $logResult.Output | ForEach-Object { Write-Host $_ } }
+		if ($logResult.ExitCode -ne 0) { Write-Warn 'Bounded logcat snapshot returned a non-zero code.' }
+	}
+
+	Write-Host ''
+	Write-Host '========================================' -ForegroundColor Green
+	Write-Host 'FORESTMUSIC DEVICE QA STARTUP PASS' -ForegroundColor Green
+	Write-Host '========================================' -ForegroundColor Green
+	Write-Host "Project: $script:ProjectRoot"
+	Write-Host "Package: $packageName"
+	Write-Host "Scheme: $expoScheme"
+	Write-Host "SHA: $sha"
+	Write-Host "Device: $serial ($model)"
+	Write-Host "Installed version: $($installed.VersionName) ($($installed.VersionCode))"
+	Write-Host "Metro: 127.0.0.1:$MetroPort /status running"
+	Write-Host "ADB reverse: tcp:$MetroPort tcp:$MetroPort"
+	Write-Host "PID: $appPid"
+	Write-Host ''
+	Write-Host 'DEVICE CONNECTION PASS. Verify real application UI is visible on the phone.' -ForegroundColor Yellow
+	Write-Host 'This script does not claim visual correctness or gameplay pass.' -ForegroundColor Yellow
+
+}
+catch {
+	$message = $_.Exception.Message
+	if ($message -match '^QA_STOP\|([^|]+)\|([^|]+)\|(.+)$') {
+		$layer = $Matches[1]
+		$reason = $Matches[2]
+		$suggestion = $Matches[3]
+	} else {
+		$layer = 'Unexpected script error'
+		$reason = $message
+		$suggestion = 'Inspect the PowerShell error and rerun only after the failing layer is understood.'
 	}
 	Write-Host ''
-	adb -s $PreferredSerial reverse --list
-}
-
-Write-Section -Title '7. Localhost Metro probe 127.0.0.1:8081'
-$metroReachable = Test-LocalPort -Port $MetroPort
-if ($metroReachable) {
-	Write-Ok '127.0.0.1:8081 is reachable (bounded TCP probe; avoids Test-NetConnection hangs)'
-} else {
-	Write-Warn '127.0.0.1:8081 not reachable yet - start Metro with: npm start'
-}
-
-# ---------------------------------------------------------------------------
-# Debug APK / assemble hints (commands only - no automatic clean/install)
-# ---------------------------------------------------------------------------
-Write-Section -Title '8. Debug APK / install commands (manual)'
-
-$debugApkCandidates = @(
-	'android\app\build\outputs\apk\debug\app-debug.apk',
-	'android\app\build\outputs\apk\debug\app-debug-unsigned.apk'
-)
-$foundApk = $null
-foreach ($rel in $debugApkCandidates) {
-	$full = Join-Path $ProjectRoot $rel
-	if (Test-Path $full) {
-		$foundApk = $full
-		break
+	Write-Host '========================================' -ForegroundColor Red
+	<#
+	#
+	Write-Host "STOP — $layer" -ForegroundColor Red
+	Write-Host '========================================' -ForegroundColor Red
+	#
+	#>
+	Write-Host ('Reason: ' + $reason) -ForegroundColor Red
+	Write-Host ('Suggested next diagnostic: ' + $suggestion) -ForegroundColor Yellow
+	exit 1
+} finally {
+	if ($script:LocationPushed) {
+		Pop-Location
+		$script:LocationPushed = $false
 	}
 }
-
-if ($foundApk) {
-	Write-Ok "Debug APK: $foundApk"
-} else {
-	Write-Info 'Debug APK not found yet (expected before first assembleDebug)'
-}
-
-Write-Host ''
-Write-Info 'Suggested commands (run manually when needed):'
-Write-Host "  cd `"$ProjectRoot`""
-Write-Host '  npx expo prebuild --platform android'
-Write-Host '  cd android'
-Write-Host '  .\gradlew.bat assembleDebug'
-Write-Host '  adb -s <serial> install -r app\build\outputs\apk\debug\app-debug.apk'
-Write-Host ''
-Write-Warn 'This script does NOT run gradlew clean, prebuild --clean, or npm ci.'
-
-# ---------------------------------------------------------------------------
-# Installed package version via dumpsys
-# ---------------------------------------------------------------------------
-Write-Section -Title "9. dumpsys package $PackageName"
-if ($adbCmd -and $PreferredSerial) {
-	$dump = adb -s $PreferredSerial shell dumpsys package $PackageName 2>$null
-	if ($dump -match 'versionName=(\S+)') {
-		Write-Ok "Installed versionName=$($Matches[1])"
-	} else {
-		Write-Warn "Package $PackageName not installed (or dumpsys missing versionName)"
-	}
-	if ($dump -match 'versionCode=(\d+)') {
-		Write-Info "versionCode=$($Matches[1])"
-	}
-	$dump | Select-String -Pattern 'versionName=|versionCode=|pkg=Package' | Select-Object -First 8 | ForEach-Object {
-		Write-Info $_.Line.Trim()
-	}
-} else {
-	Write-Warn 'Skip dumpsys - adb/device unavailable'
-}
-
-# ---------------------------------------------------------------------------
-# Dev client deep link via Expo scheme + 127.0.0.1:8081
-# ---------------------------------------------------------------------------
-Write-Section -Title '10. Open Expo development client (explicit localhost)'
-
-# Expo development-client URL form:
-#   water-sort://expo-development-client/?url=http%3A%2F%2F127.0.0.1%3A8081
-$encodedMetro = [System.Uri]::EscapeDataString("http://127.0.0.1:$MetroPort")
-$devClientUrl = "${ExpoScheme}://expo-development-client/?url=$encodedMetro"
-
-Write-Info "App name:  $AppDisplayName"
-Write-Info "Package:   $PackageName"
-Write-Info "Scheme:    $ExpoScheme"
-Write-Info "Deep link: $devClientUrl"
-Write-Host ''
-Write-Info 'Launch manually (preferred - never auto-killed):'
-Write-Host "  adb -s <serial> shell am start -a android.intent.action.VIEW -d `"$devClientUrl`" $PackageName"
-Write-Host ''
-Write-Info 'Or open the package main activity, then paste the URL in the dev client.'
-Write-Host "  adb -s <serial> shell monkey -p $PackageName -c android.intent.category.LAUNCHER 1"
-
-if ($adbCmd -and $PreferredSerial) {
-	Write-Host ''
-	Write-Info "Ready-to-run for preferred serial $PreferredSerial :"
-	Write-Host "  adb -s $PreferredSerial shell am start -a android.intent.action.VIEW -d `"$devClientUrl`" $PackageName"
-}
-
-# ---------------------------------------------------------------------------
-# PID lookup + logcat helper
-# ---------------------------------------------------------------------------
-Write-Section -Title '11. PID lookup / logcat helper'
-if ($adbCmd -and $PreferredSerial) {
-	$pidLine = adb -s $PreferredSerial shell pidof -s $PackageName 2>$null
-	$appPid = ($pidLine | Out-String).Trim()
-	if ($appPid -match '^\d+$') {
-		Write-Ok "Running PID: $appPid"
-	} else {
-		Write-Info 'App not running (no PID) - start the dev client first'
-		$appPid = '<PID>'
-	}
-
-	Write-Host ''
-	Write-Info 'PID-filtered logcat (copy-paste):'
-	Write-Host "  adb -s $PreferredSerial logcat --pid=$appPid"
-	Write-Host "  adb -s $PreferredSerial logcat --pid=$appPid *:S ReactNative:V ReactNativeJS:V Expo:V"
-} else {
-	Write-Warn 'Skip PID/logcat - adb/device unavailable'
-}
-
-if ($ShowLogcatHelp) {
-	Write-Host ''
-	Write-Info 'Extra logcat tips:'
-	Write-Host '  adb logcat -c'
-	Write-Host "  adb logcat | Select-String $PackageName"
-}
-
-# ---------------------------------------------------------------------------
-# Summary
-# ---------------------------------------------------------------------------
-Write-Section -Title 'SUMMARY'
-Write-Info "Project:     $ProjectRoot"
-Write-Info "Package:     $PackageName"
-Write-Info "Scheme:      $ExpoScheme"
-Write-Info "Metro port:  $MetroPort (never auto-switched)"
-Write-Info "SDK:         $(if ($sdkPath) { $sdkPath } else { 'NOT FOUND' })"
-Write-Info "Device:      $(if ($PreferredSerial) { $PreferredSerial } else { 'NONE' })"
-Write-Info "Metro 8081:  $(if ($metroReachable) { 'reachable' } else { 'not reachable' })"
-Write-Host ''
-Write-Ok 'QA helper finished (read-only / safe create local.properties only).'
-Write-Host ''

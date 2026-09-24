@@ -15,7 +15,9 @@ import { buildAnalyticsEvent } from '../analytics/events'
 import {
 	ABOUT_APP_NAME,
 	ABOUT_OTHER_APPS_URL,
+	ABOUT_PRIVACY_URL,
 	ABOUT_WEBSITE_URL,
+	APP_DISPLAY_NAME,
 } from '../about/config'
 
 describe('Phase 6 production service contracts', () => {
@@ -124,10 +126,14 @@ describe('Phase 6 production service contracts', () => {
 	})
 
 	it('keeps About identity and external URLs factual', () => {
-		expect(ABOUT_APP_NAME).toBe('Water Sort — Сортировка воды')
+		expect(APP_DISPLAY_NAME).toBe('Переливайка')
+		expect(ABOUT_APP_NAME).toBe('Переливайка — сортировка воды')
 		expect(ABOUT_WEBSITE_URL).toBe('https://forest-music.ru')
 		expect(ABOUT_OTHER_APPS_URL).toBe(
 			'https://www.rustore.ru/catalog/developer/pw0k858f',
+		)
+		expect(ABOUT_PRIVACY_URL).toBe(
+			'https://alex1c.github.io/WaterSortGameRuStore/',
 		)
 	})
 })

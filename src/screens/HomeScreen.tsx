@@ -2,6 +2,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { BannerSlot } from '../components/BannerSlot'
+import { APP_DISPLAY_NAME } from '../about/config'
 import { CAMPAIGN_LEVEL_COUNT } from '../campaign'
 import { spacing, uiColors } from '../theme'
 
@@ -50,7 +51,7 @@ export function HomeScreen({
 			testID="home-screen"
 		>
 			<View style={styles.content}>
-				<Text style={styles.brand}>Water Sort</Text>
+				<Text style={styles.brand}>{APP_DISPLAY_NAME}</Text>
 				<Text style={styles.progress}>
 					Пройдено: {levelsCompleted} / {CAMPAIGN_LEVEL_COUNT}
 				</Text>

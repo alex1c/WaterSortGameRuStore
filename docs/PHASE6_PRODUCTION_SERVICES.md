@@ -8,7 +8,8 @@
 
 ## Services
 
-- AppMetrica is initialized once with the Water Sort API key. Event payloads
+- AppMetrica is initialized once with the existing API key (dashboard display
+  name should be set manually to «Переливайка — сортировка воды»). Event payloads
   are allow-listed scalar fields; board state, private text and identifiers
   are not sent. Analytics failures are ignored by gameplay.
 - Yandex Mobile Ads is the only advertising stack. Banner mapping is game ->

@@ -14,6 +14,7 @@ import {
 	ABOUT_APP_NAME,
 	ABOUT_DEVELOPER,
 	ABOUT_OTHER_APPS_URL,
+	ABOUT_PRIVACY_URL,
 	ABOUT_WEBSITE_URL,
 } from '../about/config'
 import { CAMPAIGN_LEVEL_COUNT } from '../campaign'
@@ -79,6 +80,13 @@ export function AboutScreen({ onClose }: AboutScreenProps) {
 					style={({ pressed }) => [styles.linkButton, pressed && styles.pressed]}
 				>
 					<Text style={styles.linkLabel}>Другие наши приложения</Text>
+				</Pressable>
+				<Pressable
+					accessibilityRole="button"
+					onPress={() => void openExternalUrl(ABOUT_PRIVACY_URL)}
+					style={({ pressed }) => [styles.linkButton, pressed && styles.pressed]}
+				>
+					<Text style={styles.linkLabel}>Политика конфиденциальности</Text>
 				</Pressable>
 			</ScrollView>
 

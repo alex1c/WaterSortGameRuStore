@@ -1,6 +1,6 @@
-# Water Sort — RuStore / ForestMusic
+# Переливайка — RuStore / ForestMusic
 
-Campaign Water Sort puzzle game for Android / RuStore.
+Campaign water-sort puzzle game for Android / RuStore.
 
 ## Stack
 
@@ -15,7 +15,8 @@ Campaign Water Sort puzzle game for Android / RuStore.
 ## Package
 
 - Android / application id: `com.calculatorplatform.watersort`
-- Display name: **Water Sort**
+- Display name: **Переливайка**
+- Full product name: **Переливайка — сортировка воды**
 - Expo development-client scheme: `water-sort`
 
 ## Scripts

@@ -7,6 +7,16 @@ import {
 	type CampaignDifficultyBand,
 } from '../campaign'
 import {
+	evaluateAchievements,
+	listAchievementProgress,
+	markAchievementsNotified,
+	pendingUnlockNotifications,
+	type AchievementId,
+	type AchievementProgress,
+	type AchievementState,
+	createEmptyAchievementState,
+} from '../achievements'
+import {
 	hapticInvalid,
 	hapticPour,
 	hapticSelection,
@@ -40,14 +50,23 @@ import { isPersistedSessionCompatible } from '../storage/sessionCompatibility'
 import type { PaletteMode } from '../theme'
 import { maybeShowInterstitialAfterLevelCompleted } from '../ads'
 import { trackEvent } from '../analytics'
+import {
+	createEmptyStatistics,
+	createFreshAttemptFlags,
+	recordHintUsed,
+	recordLevelCompletion,
+	recordPour,
+	recordRestartUsed,
+	recordUndoUsed,
+	type AttemptFlags,
+	type GameStatistics,
+} from '../statistics'
 
 export type TrainingStep = 'pick-source' | 'pick-destination' | 'encourage' | 'done'
 
-/** Cosmetic pour signal — never mutates Water Sort rules by itself. */
 export interface PourAnimation {
 	from: number
 	to: number
-	/** 0..1 progress for tube tilt / highlight. */
 	startedAt: number
 	durationMs: number
 }
@@ -70,13 +89,23 @@ export interface CampaignGameController {
 	showCampaignFinished: boolean
 	campaignComplete: boolean
 	tutorialCompleted: boolean
+	/** True while Level 1 interactive training guidance is active. */
+	isTrainingActive: boolean
 	trainingStep: TrainingStep
 	highestUnlockedLevel: number
 	canUndo: boolean
 	toastMessage: string | null
 	settings: GameSettings
+	statistics: GameStatistics
+	achievements: AchievementState
+	achievementProgress: AchievementProgress[]
+	pendingAchievementToast: AchievementId | null
+	hasMidLevelSession: boolean
+	levelsCompleted: number
 	updateSettings: (patch: Partial<GameSettings>) => void
 	replayTutorial: () => void
+	continueGame: () => void
+	acknowledgeAchievementToast: () => void
 	handleTubePress: (index: number) => void
 	handleUndo: () => void
 	handleRestart: () => void
@@ -88,10 +117,6 @@ export interface CampaignGameController {
 	dismissCampaignFinished: () => void
 }
 
-/**
- * Campaign gameplay controller: production engine + persistence + UX chrome.
- * Pure Water Sort rules live only in src/game — this hook never reimplements them.
- */
 export function useCampaignGame(): CampaignGameController {
 	const [ready, setReady] = useState(false)
 	const [highestUnlockedLevel, setHighestUnlockedLevel] = useState(1)
@@ -99,9 +124,16 @@ export function useCampaignGame(): CampaignGameController {
 	const [tutorialCompleted, setTutorialCompleted] = useState(false)
 	const [showCampaignFinished, setShowCampaignFinished] = useState(false)
 	const [settings, setSettings] = useState<GameSettings>({ ...DEFAULT_GAME_SETTINGS })
+	const [statistics, setStatistics] = useState<GameStatistics>(createEmptyStatistics)
+	const [achievements, setAchievements] = useState<AchievementState>(
+		createEmptyAchievementState,
+	)
+	const [pendingAchievementToast, setPendingAchievementToast] =
+		useState<AchievementId | null>(null)
 
 	const [levelNumber, setLevelNumber] = useState(1)
-	const [difficultyBand, setDifficultyBand] = useState<CampaignDifficultyBand>('BEGINNER')
+	const [difficultyBand, setDifficultyBand] =
+		useState<CampaignDifficultyBand>('BEGINNER')
 	const [seed, setSeed] = useState('watersort-campaign-v1-level-1')
 	const [initialBoard, setInitialBoard] = useState<Board>([])
 	const [currentBoard, setCurrentBoard] = useState<Board>([])
@@ -115,6 +147,7 @@ export function useCampaignGame(): CampaignGameController {
 	const [trainingStep, setTrainingStep] = useState<TrainingStep>('done')
 	const [toastMessage, setToastMessage] = useState<string | null>(null)
 	const [isLevelSolved, setIsLevelSolved] = useState(false)
+	const [attempt, setAttempt] = useState<AttemptFlags>(createFreshAttemptFlags)
 
 	const flashTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 	const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -124,7 +157,11 @@ export function useCampaignGame(): CampaignGameController {
 	const highestUnlockedRef = useRef(1)
 	const campaignCompleteRef = useRef(false)
 	const settingsRef = useRef<GameSettings>({ ...DEFAULT_GAME_SETTINGS })
+	const statisticsRef = useRef<GameStatistics>(createEmptyStatistics())
+	const achievementsRef = useRef<AchievementState>(createEmptyAchievementState())
+	const attemptRef = useRef<AttemptFlags>(createFreshAttemptFlags())
 	const animatingRef = useRef(false)
+	const completionLockRef = useRef<number | null>(null)
 
 	const showToast = useCallback((message: string) => {
 		if (toastTimerRef.current) clearTimeout(toastTimerRef.current)
@@ -178,6 +215,28 @@ export function useCampaignGame(): CampaignGameController {
 		[clearPourAnimation],
 	)
 
+	const queueAchievementToasts = useCallback((state: AchievementState) => {
+		const pending = pendingUnlockNotifications(state)
+		if (pending.length === 0) {
+			setPendingAchievementToast(null)
+			return
+		}
+		setPendingAchievementToast(pending[0] ?? null)
+	}, [])
+
+	const applyAchievementEvaluation = useCallback(
+		(stats: GameStatistics) => {
+			const evaluated = evaluateAchievements(stats, achievementsRef.current)
+			achievementsRef.current = evaluated.state
+			setAchievements(evaluated.state)
+			for (const id of evaluated.newlyUnlocked) {
+				trackEvent('achievement_unlocked', { achievement_id: id })
+			}
+			queueAchievementToasts(evaluated.state)
+		},
+		[queueAchievementToasts],
+	)
+
 	const hydrateLevel = useCallback(
 		(
 			level: ReturnType<typeof createCampaignLevel>,
@@ -186,14 +245,23 @@ export function useCampaignGame(): CampaignGameController {
 				moveHistory?: Board[]
 				moveCount?: number
 				tutorialDone?: boolean
+				attempt?: AttemptFlags
 			},
 		) => {
 			const start = cloneBoard(level.board)
-			const board = options?.currentBoard ? cloneBoard(options.currentBoard) : cloneBoard(start)
+			const board = options?.currentBoard
+				? cloneBoard(options.currentBoard)
+				: cloneBoard(start)
 			const moves = options?.moveCount ?? 0
 			const tutorialDone = options?.tutorialDone ?? tutorialCompletedRef.current
+			const nextAttempt = options?.attempt
+				? { ...options.attempt }
+				: createFreshAttemptFlags()
 
 			clearPourAnimation()
+			completionLockRef.current = null
+			attemptRef.current = nextAttempt
+			setAttempt(nextAttempt)
 			setLevelNumber(level.levelNumber)
 			setDifficultyBand(level.campaignBand)
 			setSeed(String(level.seed))
@@ -231,11 +299,17 @@ export function useCampaignGame(): CampaignGameController {
 			campaignCompleteRef.current = saved.campaignComplete
 			tutorialCompletedRef.current = saved.tutorialCompleted
 			settingsRef.current = saved.settings
+			statisticsRef.current = saved.statistics
+			achievementsRef.current = saved.achievements
+
 			setHighestUnlockedLevel(saved.highestUnlockedLevel)
 			setCampaignComplete(saved.campaignComplete)
 			setTutorialCompleted(saved.tutorialCompleted)
 			setSettings(saved.settings)
+			setStatistics(saved.statistics)
+			setAchievements(saved.achievements)
 			setSoundsEnabled(saved.settings.soundsEnabled)
+			queueAchievementToasts(saved.achievements)
 
 			const level = createCampaignLevel(saved.currentLevel)
 			if (
@@ -248,6 +322,7 @@ export function useCampaignGame(): CampaignGameController {
 					moveHistory: saved.session.moveHistory,
 					moveCount: saved.session.moveCount,
 					tutorialDone: saved.tutorialCompleted,
+					attempt: saved.session.attempt,
 				})
 			} else {
 				hydrateLevel(level, { tutorialDone: saved.tutorialCompleted })
@@ -259,7 +334,7 @@ export function useCampaignGame(): CampaignGameController {
 		return () => {
 			cancelled = true
 		}
-	}, [hydrateLevel])
+	}, [hydrateLevel, queueAchievementToasts])
 
 	useEffect(() => {
 		if (!ready || !persistEnabledRef.current || initialBoard.length === 0) {
@@ -272,6 +347,8 @@ export function useCampaignGame(): CampaignGameController {
 			campaignComplete: campaignCompleteRef.current,
 			tutorialCompleted: tutorialCompletedRef.current,
 			settings: settingsRef.current,
+			statistics: statisticsRef.current,
+			achievements: achievementsRef.current,
 			session: {
 				levelNumber,
 				seed,
@@ -280,6 +357,7 @@ export function useCampaignGame(): CampaignGameController {
 				currentBoard: cloneBoard(currentBoard),
 				moveHistory: moveHistory.map(cloneBoard),
 				moveCount,
+				attempt: attemptRef.current,
 			},
 		})
 	}, [
@@ -295,6 +373,9 @@ export function useCampaignGame(): CampaignGameController {
 		campaignComplete,
 		tutorialCompleted,
 		settings,
+		statistics,
+		achievements,
+		attempt,
 	])
 
 	const updateSettings = useCallback((patch: Partial<GameSettings>) => {
@@ -308,12 +389,21 @@ export function useCampaignGame(): CampaignGameController {
 	}, [])
 
 	const replayTutorial = useCallback(() => {
-		// Only clears tutorial completion — keeps unlocks, session, and settings.
 		tutorialCompletedRef.current = false
 		setTutorialCompleted(false)
 		const level = createCampaignLevel(1)
 		hydrateLevel(level, { tutorialDone: false })
 	}, [hydrateLevel])
+
+	const acknowledgeAchievementToast = useCallback(() => {
+		const current = pendingAchievementToast
+		if (!current) return
+		const next = markAchievementsNotified(achievementsRef.current, [current])
+		achievementsRef.current = next
+		setAchievements(next)
+		const remaining = pendingUnlockNotifications(next)
+		setPendingAchievementToast(remaining[0] ?? null)
+	}, [pendingAchievementToast])
 
 	const handleTubePress = useCallback(
 		(index: number) => {
@@ -350,7 +440,6 @@ export function useCampaignGame(): CampaignGameController {
 				return
 			}
 
-			// Authoritative state update first — animation is cosmetic only.
 			const previous = cloneBoard(currentBoard)
 			const nextBoard = applyMove(currentBoard, move)
 			setMoveHistory((history) => [...history, previous])
@@ -359,6 +448,10 @@ export function useCampaignGame(): CampaignGameController {
 			setSelectedTube(null)
 			setHintMove(null)
 			setHintMessage(null)
+
+			const nextStats = recordPour(statisticsRef.current)
+			statisticsRef.current = nextStats
+			setStatistics(nextStats)
 
 			void hapticPour(settingsRef.current.hapticsEnabled)
 			void playPourSound()
@@ -369,7 +462,24 @@ export function useCampaignGame(): CampaignGameController {
 			}
 
 			if (isSolved(nextBoard)) {
+				// Guard against double-count if completion UI re-renders.
+				if (completionLockRef.current === levelNumber) {
+					setIsLevelSolved(true)
+					return
+				}
+				completionLockRef.current = levelNumber
 				setIsLevelSolved(true)
+
+				const completion = recordLevelCompletion(
+					statisticsRef.current,
+					levelNumber,
+					difficultyBand,
+					attemptRef.current,
+				)
+				statisticsRef.current = completion.stats
+				setStatistics(completion.stats)
+				applyAchievementEvaluation(completion.stats)
+
 				trackEvent('level_completed', {
 					level_number: levelNumber,
 					difficulty: difficultyBand,
@@ -380,6 +490,7 @@ export function useCampaignGame(): CampaignGameController {
 				})
 				void hapticSuccess(settingsRef.current.hapticsEnabled)
 				void playWinSound()
+
 				const unlocked = nextUnlockAfterClearing(
 					levelNumber,
 					highestUnlockedRef.current,
@@ -404,6 +515,7 @@ export function useCampaignGame(): CampaignGameController {
 			}
 		},
 		[
+			applyAchievementEvaluation,
 			currentBoard,
 			difficultyBand,
 			flashInvalid,
@@ -417,9 +529,7 @@ export function useCampaignGame(): CampaignGameController {
 	)
 
 	const handleUndo = useCallback(() => {
-		if (animatingRef.current) {
-			clearPourAnimation()
-		}
+		if (animatingRef.current) clearPourAnimation()
 		if (moveHistory.length === 0) {
 			showToast('Нечего отменять')
 			return
@@ -428,6 +538,11 @@ export function useCampaignGame(): CampaignGameController {
 		const previous = history.pop()
 		if (!previous) return
 		trackEvent('undo_used', { level_number: levelNumber })
+		attemptRef.current = { ...attemptRef.current, usedUndo: true }
+		setAttempt(attemptRef.current)
+		const nextStats = recordUndoUsed(statisticsRef.current)
+		statisticsRef.current = nextStats
+		setStatistics(nextStats)
 		setMoveHistory(history)
 		setCurrentBoard(previous)
 		setMoveCount((count) => Math.max(0, count - 1))
@@ -435,6 +550,7 @@ export function useCampaignGame(): CampaignGameController {
 		setHintMove(null)
 		setHintMessage(null)
 		setIsLevelSolved(false)
+		completionLockRef.current = null
 	}, [clearPourAnimation, levelNumber, moveHistory, showToast])
 
 	const handleRestart = useCallback(() => {
@@ -442,6 +558,16 @@ export function useCampaignGame(): CampaignGameController {
 			trackEvent('level_restarted', { level_number: levelNumber })
 		}
 		clearPourAnimation()
+		attemptRef.current = {
+			usedHint: false,
+			usedUndo: false,
+			usedRestart: true,
+		}
+		setAttempt(attemptRef.current)
+		const nextStats = recordRestartUsed(statisticsRef.current)
+		statisticsRef.current = nextStats
+		setStatistics(nextStats)
+		completionLockRef.current = null
 		setCurrentBoard(cloneBoard(initialBoard))
 		setMoveHistory([])
 		setMoveCount(0)
@@ -479,6 +605,11 @@ export function useCampaignGame(): CampaignGameController {
 			}
 			setSelectedTube(null)
 			setHintMove(move)
+			attemptRef.current = { ...attemptRef.current, usedHint: true }
+			setAttempt(attemptRef.current)
+			const nextStats = recordHintUsed(statisticsRef.current)
+			statisticsRef.current = nextStats
+			setStatistics(nextStats)
 			trackEvent('hint_used', {
 				level_number: levelNumber,
 				difficulty: difficultyBand,
@@ -496,13 +627,25 @@ export function useCampaignGame(): CampaignGameController {
 			if (targetLevel < 1 || targetLevel > highestUnlockedRef.current) {
 				showToast('Уровень ещё закрыт')
 				return
-		}
-		const level = createCampaignLevel(targetLevel)
-		trackEvent('level_selected', { level_number: targetLevel })
-		hydrateLevel(level, { tutorialDone: tutorialCompletedRef.current })
+			}
+			const level = createCampaignLevel(targetLevel)
+			trackEvent('level_selected', { level_number: targetLevel })
+			hydrateLevel(level, { tutorialDone: tutorialCompletedRef.current })
 		},
 		[hydrateLevel, showToast],
 	)
+
+	const continueGame = useCallback(() => {
+		// Prefer the hydrated mid-level session. If the current board is already
+		// solved and the next campaign level is unlocked, advance for Continue.
+		if (
+			isLevelSolved &&
+			levelNumber < highestUnlockedRef.current &&
+			levelNumber < 100
+		) {
+			openLevel(levelNumber + 1)
+		}
+	}, [isLevelSolved, levelNumber, openLevel])
 
 	const handleNextLevel = useCallback(() => {
 		if (levelNumber >= 100) {
@@ -515,6 +658,13 @@ export function useCampaignGame(): CampaignGameController {
 	const handleReplayLevel = useCallback(() => {
 		openLevel(levelNumber)
 	}, [levelNumber, openLevel])
+
+	const isTrainingActive =
+		levelNumber === 1 && !tutorialCompleted && trainingStep !== 'done'
+
+	const hasMidLevelSession =
+		moveCount > 0 ||
+		JSON.stringify(currentBoard) !== JSON.stringify(initialBoard)
 
 	return {
 		ready,
@@ -534,13 +684,22 @@ export function useCampaignGame(): CampaignGameController {
 		showCampaignFinished,
 		campaignComplete,
 		tutorialCompleted,
+		isTrainingActive,
 		trainingStep,
 		highestUnlockedLevel,
 		canUndo: moveHistory.length > 0,
 		toastMessage,
 		settings,
+		statistics,
+		achievements,
+		achievementProgress: listAchievementProgress(statistics, achievements),
+		pendingAchievementToast,
+		hasMidLevelSession,
+		levelsCompleted: statistics.levelsCompleted,
 		updateSettings,
 		replayTutorial,
+		continueGame,
+		acknowledgeAchievementToast,
 		handleTubePress,
 		handleUndo,
 		handleRestart,

@@ -4,7 +4,7 @@ import {
 	parseGameSettings,
 	withTutorialReplayRequested,
 } from '../settings'
-import { createDefaultPersistedState, LEGACY_STORAGE_SCHEMA_VERSION } from '../storage/types'
+import { createDefaultPersistedState, LEGACY_STORAGE_SCHEMA_VERSIONS } from '../storage/types'
 import { parsePersistedGameState } from '../storage/parse'
 import { getLiquidColor, getLiquidSymbol, shouldShowLiquidSymbols } from '../theme/palette'
 import { createCampaignLevel, createPlaySession, tapTube } from '../campaign'
@@ -61,7 +61,7 @@ describe('settings persistence compatibility', () => {
 		const level = createCampaignLevel(1)
 		const parsed = parsePersistedGameState(
 			JSON.stringify({
-				schemaVersion: LEGACY_STORAGE_SCHEMA_VERSION,
+				schemaVersion: LEGACY_STORAGE_SCHEMA_VERSIONS[0],
 				currentLevel: 3,
 				highestUnlockedLevel: 5,
 				campaignComplete: false,

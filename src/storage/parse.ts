@@ -3,8 +3,17 @@ import { isValidBoard } from '../game/core'
 import { CAMPAIGN_LEVEL_COUNT } from '../campaign/config'
 import { parseGameSettings } from '../settings/parse'
 import {
+	parseAttemptFlags,
+	parseGameStatistics,
+	reconstructStatisticsFromProgress,
+} from '../statistics'
+import {
+	parseAchievementState,
+	reconstructAchievementsFromStats,
+} from '../achievements'
+import {
 	STORAGE_SCHEMA_VERSION,
-	LEGACY_STORAGE_SCHEMA_VERSION,
+	LEGACY_STORAGE_SCHEMA_VERSIONS,
 	createDefaultPersistedState,
 	type PersistedGameState,
 	type PersistedLevelSession,
@@ -12,8 +21,13 @@ import {
 
 /**
  * Pure parser used by tests and the async loader.
- * Never throws — returns defaults on any structural problem.
- * Accepts schema v1 (migrates) and schema v2.
+ * Accepts schema v1/v2/v3. Never throws.
+ *
+ * Migration notes:
+ * - Campaign unlocks / session / settings are preserved.
+ * - Progression statistics & reconstructible achievements are derived from
+ *   highestUnlockedLevel / campaignComplete when richer history is absent.
+ * - Historical pours / hint / undo / restart counts are NOT invented.
  */
 export function parsePersistedGameState(raw: string): PersistedGameState {
 	const fallback = createDefaultPersistedState()
@@ -24,10 +38,12 @@ export function parsePersistedGameState(raw: string): PersistedGameState {
 		}
 		const record = data as Record<string, unknown>
 		const schemaVersion = record.schemaVersion
-		if (
-			schemaVersion !== STORAGE_SCHEMA_VERSION &&
-			schemaVersion !== LEGACY_STORAGE_SCHEMA_VERSION
-		) {
+		const accepted =
+			schemaVersion === STORAGE_SCHEMA_VERSION ||
+			LEGACY_STORAGE_SCHEMA_VERSIONS.includes(
+				schemaVersion as (typeof LEGACY_STORAGE_SCHEMA_VERSIONS)[number],
+			)
+		if (!accepted) {
 			return fallback
 		}
 
@@ -42,14 +58,32 @@ export function parsePersistedGameState(raw: string): PersistedGameState {
 		const session = parseSession(record.session)
 		const settings = parseGameSettings(record.settings)
 
+		const parsedStats = parseGameStatistics(record.statistics)
+		const statistics = reconstructStatisticsFromProgress(
+			highestUnlockedLevel,
+			campaignComplete,
+			parsedStats,
+		)
+		const parsedAchievements = parseAchievementState(record.achievements)
+		const achievements = reconstructAchievementsFromStats(
+			statistics,
+			parsedAchievements,
+		)
+
 		return {
 			schemaVersion: STORAGE_SCHEMA_VERSION,
 			currentLevel,
-			highestUnlockedLevel: Math.max(highestUnlockedLevel, session?.levelNumber ?? 1, 1),
+			highestUnlockedLevel: Math.max(
+				highestUnlockedLevel,
+				session?.levelNumber ?? 1,
+				1,
+			),
 			campaignComplete,
 			tutorialCompleted,
 			session,
 			settings,
+			statistics,
+			achievements,
 		}
 	} catch {
 		return fallback
@@ -66,8 +100,14 @@ function parseSession(value: unknown): PersistedLevelSession | null {
 	if (typeof record.seed !== 'string' || record.seed.length === 0) return null
 	if (typeof record.campaignBand !== 'string') return null
 	if (!isBoard(record.initialBoard) || !isBoard(record.currentBoard)) return null
-	if (!Array.isArray(record.moveHistory) || !record.moveHistory.every(isBoard)) return null
-	if (typeof record.moveCount !== 'number' || !Number.isFinite(record.moveCount) || record.moveCount < 0) {
+	if (!Array.isArray(record.moveHistory) || !record.moveHistory.every(isBoard)) {
+		return null
+	}
+	if (
+		typeof record.moveCount !== 'number' ||
+		!Number.isFinite(record.moveCount) ||
+		record.moveCount < 0
+	) {
 		return null
 	}
 
@@ -79,6 +119,7 @@ function parseSession(value: unknown): PersistedLevelSession | null {
 		currentBoard: cloneBoardTree(record.currentBoard),
 		moveHistory: record.moveHistory.map(cloneBoardTree),
 		moveCount: Math.floor(record.moveCount),
+		attempt: parseAttemptFlags(record.attempt),
 	}
 }
 

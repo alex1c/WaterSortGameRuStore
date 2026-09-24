@@ -4,15 +4,23 @@ import {
 	DEFAULT_GAME_SETTINGS,
 	type GameSettings,
 } from '../settings/types'
+import {
+	createEmptyStatistics,
+	type AttemptFlags,
+	type GameStatistics,
+} from '../statistics'
+import {
+	createEmptyAchievementState,
+	type AchievementState,
+} from '../achievements'
 
 /**
- * Schema v2 adds settings while remaining loadable from v1 campaign saves.
- * Bump only when the persisted shape changes incompatibly.
+ * Schema v3 adds statistics + achievements.
+ * v1/v2 campaign progress migrates safely without wiping unlocks.
  */
-export const STORAGE_SCHEMA_VERSION = 2
+export const STORAGE_SCHEMA_VERSION = 3
 
-/** Legacy schema still accepted and migrated on load. */
-export const LEGACY_STORAGE_SCHEMA_VERSION = 1
+export const LEGACY_STORAGE_SCHEMA_VERSIONS = [1, 2] as const
 
 export const STORAGE_KEY = 'watersort.campaign.v1'
 
@@ -23,20 +31,22 @@ export interface PersistedLevelSession {
 	campaignBand: CampaignDifficultyBand
 	initialBoard: Board
 	currentBoard: Board
-	/** Previous boards after each successful move (oldest → newest). */
 	moveHistory: Board[]
 	moveCount: number
+	/** Per-attempt flags for statistics (optional on legacy sessions). */
+	attempt?: AttemptFlags
 }
 
 export interface PersistedGameState {
 	schemaVersion: number
 	currentLevel: number
 	highestUnlockedLevel: number
-	/** True after the player finishes level 100. */
 	campaignComplete: boolean
 	tutorialCompleted: boolean
 	session: PersistedLevelSession | null
 	settings: GameSettings
+	statistics: GameStatistics
+	achievements: AchievementState
 }
 
 export function createDefaultPersistedState(): PersistedGameState {
@@ -48,5 +58,7 @@ export function createDefaultPersistedState(): PersistedGameState {
 		tutorialCompleted: false,
 		session: null,
 		settings: { ...DEFAULT_GAME_SETTINGS },
+		statistics: createEmptyStatistics(),
+		achievements: createEmptyAchievementState(),
 	}
 }

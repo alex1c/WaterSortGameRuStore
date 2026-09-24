@@ -10,6 +10,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { BannerSlot } from '../components/BannerSlot'
+import { AchievementToast } from '../components/AchievementToast'
 import { GameControls } from '../components/GameControls'
 import { GameHeader } from '../components/GameHeader'
 import { TrainingHint } from '../components/TrainingHint'
@@ -19,6 +20,7 @@ import { useSharedCampaignGame } from '../hooks/CampaignGameContext'
 import { uiColors } from '../theme'
 
 interface GameScreenProps {
+	onOpenHome: () => void
 	onOpenLevels: () => void
 	onOpenSettings: () => void
 }
@@ -33,7 +35,7 @@ interface GameScreenProps {
  *   → AdBannerPlaceholder (50px)
  *   → real device bottom safe-area inset
  */
-export function GameScreen({ onOpenLevels, onOpenSettings }: GameScreenProps) {
+export function GameScreen({ onOpenHome, onOpenLevels, onOpenSettings }: GameScreenProps) {
 	const insets = useSafeAreaInsets()
 	const game = useSharedCampaignGame()
 	const [boardArea, setBoardArea] = useState({ width: 0, height: 0 })
@@ -79,6 +81,8 @@ export function GameScreen({ onOpenLevels, onOpenSettings }: GameScreenProps) {
 				levelNumber={game.levelNumber}
 				difficultyLabel={game.difficultyLabel}
 				moveCount={game.moveCount}
+				isTrainingActive={game.isTrainingActive}
+				onOpenHome={onOpenHome}
 				onOpenLevels={onOpenLevels}
 				onOpenSettings={onOpenSettings}
 			/>
@@ -145,6 +149,11 @@ export function GameScreen({ onOpenLevels, onOpenSettings }: GameScreenProps) {
 					</Text>
 				</View>
 			) : null}
+
+			<AchievementToast
+				achievementId={game.pendingAchievementToast}
+				onDone={game.acknowledgeAchievementToast}
+			/>
 		</View>
 	)
 }

@@ -10,6 +10,10 @@ export const ANALYTICS_EVENT_NAMES = [
 	'level_selected',
 	'settings_changed',
 	'campaign_completed',
+	'home_opened',
+	'statistics_opened',
+	'achievements_opened',
+	'achievement_unlocked',
 ] as const
 
 export type AnalyticsEventName = (typeof ANALYTICS_EVENT_NAMES)[number]
@@ -31,6 +35,10 @@ const ALLOWED_PARAMETERS: Record<AnalyticsEventName, readonly string[]> = {
 		'sounds_enabled',
 	],
 	campaign_completed: ['level_number'],
+	home_opened: [],
+	statistics_opened: [],
+	achievements_opened: [],
+	achievement_unlocked: ['achievement_id'],
 }
 
 export type AnalyticsParameter = string | number | boolean
@@ -42,8 +50,6 @@ export interface AnalyticsEvent {
 
 /**
  * Keeps the analytics contract intentionally small and strips unknown values.
- * In particular, board/session objects and user-entered text can never be sent
- * through the gameplay event adapter.
  */
 export function buildAnalyticsEvent(
 	name: AnalyticsEventName,

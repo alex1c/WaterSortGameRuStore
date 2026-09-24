@@ -71,7 +71,7 @@ export const ACHIEVEMENT_DEFINITIONS: readonly AchievementDefinition[] = [
 	{
 		id: 'sort_master',
 		title: 'Мастер сортировки',
-		description: 'Пройдите все 100 уровней кампании',
+		description: 'Пройдите 100 уровней',
 		target: 100,
 		progressOf: (s) => s.levelsCompleted,
 		reconstructible: true,

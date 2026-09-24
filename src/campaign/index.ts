@@ -17,6 +17,15 @@ export type { CampaignDifficultyBand, CampaignLevelConfig } from './config'
 export { createCampaignLevel, createLevel } from './createLevel'
 export type { CampaignLevel } from './createLevel'
 export {
+	LEVEL_SELECT_PAGE_SIZE,
+	getLevelSelectPageBounds,
+	getLevelSelectPageCount,
+	getLevelSelectPageIndex,
+	listLevelSelectPageLevels,
+	listLevelSelectRanges,
+	resolveLevelSelectFocusLevel,
+} from './levelSelect'
+export {
 	createPlaySession,
 	requestHint,
 	restartSession,

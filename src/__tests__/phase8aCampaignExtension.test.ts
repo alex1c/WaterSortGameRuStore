@@ -163,6 +163,9 @@ describe('Phase 8A campaign extension', () => {
 
 	it('preserves sort_master=100 and adds 250/500/1000 progression', () => {
 		expect(getAchievementDefinition('sort_master')?.target).toBe(100)
+		expect(getAchievementDefinition('sort_master')?.description).toBe(
+			'Пройдите 100 уровней',
+		)
 		expect(getAchievementDefinition('veteran_250')?.target).toBe(250)
 		expect(getAchievementDefinition('master_500')?.target).toBe(500)
 		expect(getAchievementDefinition('legend_1000')?.target).toBe(1000)

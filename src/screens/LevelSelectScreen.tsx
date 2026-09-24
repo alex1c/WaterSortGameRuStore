@@ -1,17 +1,26 @@
-import { useMemo, useState } from 'react'
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import {
+	Pressable,
+	ScrollView,
+	StyleSheet,
+	Text,
+	View,
+	type LayoutChangeEvent,
+} from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import {
-	CAMPAIGN_LEVEL_COUNT,
+	getLevelSelectPageBounds,
+	getLevelSelectPageCount,
+	getLevelSelectPageIndex,
 	isLevelCompleted,
 	isLevelUnlocked,
+	listLevelSelectPageLevels,
+	listLevelSelectRanges,
+	resolveLevelSelectFocusLevel,
 } from '../campaign'
 import { spacing, uiColors } from '../theme'
 import { BannerSlot } from '../components/BannerSlot'
-
-/** Temporary PH8A page size — full virtualized selector is PH8B. */
-const LEVEL_PAGE_SIZE = 100
 
 interface LevelSelectScreenProps {
 	currentLevel: number
@@ -22,9 +31,13 @@ interface LevelSelectScreenProps {
 }
 
 /**
- * Minimal compatibility selector for the 1000-level campaign.
- * Renders one 100-level page at a time to avoid mounting 1000 cells.
- * Proper virtualization / range UX is deferred to PH8B.
+ * Scalable 1000-level selector: one 100-level page at a time, range chips,
+ * and auto-open on the page containing the active current level.
+ *
+ * Focus policy: prefer `currentLevel` (active session); fall back to
+ * `highestUnlockedLevel` only when current is invalid.
+ *
+ * Does NOT call createCampaignLevel — grid uses progression metadata only.
  */
 export function LevelSelectScreen({
 	currentLevel,
@@ -34,25 +47,49 @@ export function LevelSelectScreen({
 	onClose,
 }: LevelSelectScreenProps) {
 	const insets = useSafeAreaInsets()
-	const pageCount = Math.ceil(CAMPAIGN_LEVEL_COUNT / LEVEL_PAGE_SIZE)
-	const initialPage = Math.min(
-		pageCount - 1,
-		Math.max(0, Math.floor((currentLevel - 1) / LEVEL_PAGE_SIZE)),
+	const pageCount = getLevelSelectPageCount()
+	const ranges = useMemo(() => listLevelSelectRanges(), [])
+	const focusLevel = resolveLevelSelectFocusLevel(
+		currentLevel,
+		highestUnlockedLevel,
 	)
-	const [pageIndex, setPageIndex] = useState(initialPage)
+	const [pageIndex, setPageIndex] = useState(() =>
+		getLevelSelectPageIndex(focusLevel),
+	)
 
-	const { start, end, levels } = useMemo(() => {
-		const pageStart = pageIndex * LEVEL_PAGE_SIZE + 1
-		const pageEnd = Math.min(CAMPAIGN_LEVEL_COUNT, pageStart + LEVEL_PAGE_SIZE - 1)
-		return {
-			start: pageStart,
-			end: pageEnd,
-			levels: Array.from(
-				{ length: pageEnd - pageStart + 1 },
-				(_, i) => pageStart + i,
-			),
-		}
+	const gridScrollRef = useRef<ScrollView>(null)
+	const rangeScrollRef = useRef<ScrollView>(null)
+	const currentCellYRef = useRef<number | null>(null)
+	const didScrollToCurrentRef = useRef(false)
+
+	const { start, end } = getLevelSelectPageBounds(pageIndex)
+	const levels = useMemo(
+		() => listLevelSelectPageLevels(pageIndex),
+		[pageIndex],
+	)
+
+	useEffect(() => {
+		didScrollToCurrentRef.current = false
+		currentCellYRef.current = null
 	}, [pageIndex])
+
+	useEffect(() => {
+		// Keep the active range chip roughly centered when page changes.
+		const chipWidth = 88
+		const offset = Math.max(0, pageIndex * chipWidth - chipWidth)
+		rangeScrollRef.current?.scrollTo({ x: offset, animated: true })
+	}, [pageIndex])
+
+	const handleCurrentCellLayout = (event: LayoutChangeEvent) => {
+		currentCellYRef.current = event.nativeEvent.layout.y
+		if (didScrollToCurrentRef.current) return
+		if (focusLevel < start || focusLevel > end) return
+		didScrollToCurrentRef.current = true
+		const y = Math.max(0, event.nativeEvent.layout.y - 24)
+		requestAnimationFrame(() => {
+			gridScrollRef.current?.scrollTo({ y, animated: false })
+		})
+	}
 
 	return (
 		<View
@@ -70,21 +107,62 @@ export function LevelSelectScreen({
 				<Text style={styles.title}>Уровни</Text>
 				<Pressable
 					accessibilityRole="button"
-					accessibilityLabel="Закрыть"
+					accessibilityLabel="Назад на главную"
 					onPress={onClose}
 					style={({ pressed }) => [styles.closeButton, pressed && styles.pressed]}
+					testID="level-select-back"
 				>
 					<Text style={styles.closeLabel}>Назад</Text>
 				</Pressable>
 			</View>
-			<Text style={styles.subtitle}>
-				Открыто до {highestUnlockedLevel} · {start}–{end} / {CAMPAIGN_LEVEL_COUNT}
+
+			<Text style={styles.subtitle} testID="level-select-subtitle">
+				Открыто до {highestUnlockedLevel}
 				{campaignComplete ? ' · Кампания пройдена' : ''}
 			</Text>
+
+			<ScrollView
+				ref={rangeScrollRef}
+				horizontal
+				showsHorizontalScrollIndicator={false}
+				contentContainerStyle={styles.rangeRow}
+				testID="level-select-ranges"
+			>
+				{ranges.map((range) => {
+					const selected = range.pageIndex === pageIndex
+					const rangeUnlocked = highestUnlockedLevel >= range.start
+					return (
+						<Pressable
+							key={range.pageIndex}
+							accessibilityRole="button"
+							accessibilityState={{ selected }}
+							accessibilityLabel={`Диапазон ${range.label}${selected ? ', выбран' : ''}${rangeUnlocked ? '' : ', ещё не открыт'}`}
+							onPress={() => setPageIndex(range.pageIndex)}
+							style={({ pressed }) => [
+								styles.rangeChip,
+								selected && styles.rangeChipSelected,
+								!rangeUnlocked && styles.rangeChipLocked,
+								pressed && styles.pressed,
+							]}
+							testID={`level-range-${range.start}-${range.end}`}
+						>
+							<Text
+								style={[
+									styles.rangeChipLabel,
+									selected && styles.rangeChipLabelSelected,
+								]}
+							>
+								{range.label}
+							</Text>
+						</Pressable>
+					)
+				})}
+			</ScrollView>
 
 			<View style={styles.pageRow}>
 				<Pressable
 					accessibilityRole="button"
+					accessibilityLabel="Предыдущий диапазон"
 					disabled={pageIndex <= 0}
 					onPress={() => setPageIndex((value) => Math.max(0, value - 1))}
 					style={({ pressed }) => [
@@ -92,14 +170,21 @@ export function LevelSelectScreen({
 						pageIndex <= 0 && styles.pageButtonDisabled,
 						pressed && pageIndex > 0 && styles.pressed,
 					]}
+					testID="level-page-prev"
 				>
 					<Text style={styles.pageButtonLabel}>←</Text>
 				</Pressable>
-				<Text style={styles.pageLabel}>
-					{pageIndex + 1} / {pageCount}
-				</Text>
+				<View style={styles.pageCenter} testID="level-page-label">
+					<Text style={styles.pageRange}>
+						{start}–{end}
+					</Text>
+					<Text style={styles.pageMeta}>
+						{pageIndex + 1} / {pageCount}
+					</Text>
+				</View>
 				<Pressable
 					accessibilityRole="button"
+					accessibilityLabel="Следующий диапазон"
 					disabled={pageIndex >= pageCount - 1}
 					onPress={() =>
 						setPageIndex((value) => Math.min(pageCount - 1, value + 1))
@@ -109,6 +194,7 @@ export function LevelSelectScreen({
 						pageIndex >= pageCount - 1 && styles.pageButtonDisabled,
 						pressed && pageIndex < pageCount - 1 && styles.pressed,
 					]}
+					testID="level-page-next"
 				>
 					<Text style={styles.pageButtonLabel}>→</Text>
 				</Pressable>
@@ -122,9 +208,11 @@ export function LevelSelectScreen({
 			</View>
 
 			<ScrollView
+				ref={gridScrollRef}
 				style={styles.scroll}
 				contentContainerStyle={styles.grid}
 				showsVerticalScrollIndicator={false}
+				testID="level-select-grid"
 			>
 				{levels.map((level) => {
 					const unlocked = isLevelUnlocked(level, highestUnlockedLevel)
@@ -134,14 +222,25 @@ export function LevelSelectScreen({
 						campaignComplete,
 					)
 					const isCurrent = level === currentLevel
+					const stateLabel = completed
+						? 'пройден'
+						: isCurrent
+							? 'текущий'
+							: unlocked
+								? 'открыт'
+								: 'закрыт'
 					return (
 						<Pressable
 							key={level}
 							disabled={!unlocked}
 							accessibilityRole="button"
 							accessibilityState={{ disabled: !unlocked, selected: isCurrent }}
-							accessibilityLabel={`Уровень ${level}`}
-							onPress={() => onSelectLevel(level)}
+							accessibilityLabel={`Уровень ${level}, ${stateLabel}`}
+							onPress={() => {
+								if (!unlocked) return
+								onSelectLevel(level)
+							}}
+							onLayout={isCurrent ? handleCurrentCellLayout : undefined}
 							style={({ pressed }) => [
 								styles.cell,
 								completed && styles.cellCompleted,
@@ -150,12 +249,14 @@ export function LevelSelectScreen({
 								isCurrent && styles.cellCurrent,
 								pressed && unlocked && styles.pressed,
 							]}
+							testID={`level-cell-${level}`}
 						>
 							<Text
 								style={[
 									styles.cellLabel,
 									!unlocked && styles.cellLabelLocked,
 									completed && styles.cellLabelCompleted,
+									isCurrent && styles.cellLabelCurrent,
 								]}
 							>
 								{level}
@@ -168,7 +269,9 @@ export function LevelSelectScreen({
 
 			<View style={styles.bottomStack}>
 				<BannerSlot placement="levels" testID="ad-banner-levels" />
-				<View style={{ height: insets.bottom, backgroundColor: uiColors.surfaceMuted }} />
+				<View
+					style={{ height: insets.bottom, backgroundColor: uiColors.surfaceMuted }}
+				/>
 			</View>
 		</View>
 	)
@@ -222,6 +325,37 @@ const styles = StyleSheet.create({
 		fontSize: 13,
 		color: uiColors.textSecondary,
 	},
+	rangeRow: {
+		paddingHorizontal: spacing.md,
+		paddingBottom: spacing.sm,
+		gap: spacing.sm,
+		alignItems: 'center',
+	},
+	rangeChip: {
+		minHeight: 36,
+		paddingHorizontal: spacing.md,
+		borderRadius: 10,
+		borderWidth: 1,
+		borderColor: uiColors.controlBorder,
+		backgroundColor: uiColors.controlBackground,
+		alignItems: 'center',
+		justifyContent: 'center',
+	},
+	rangeChipSelected: {
+		borderColor: uiColors.tubeSelected,
+		backgroundColor: '#E8F2FF',
+	},
+	rangeChipLocked: {
+		opacity: 0.72,
+	},
+	rangeChipLabel: {
+		fontSize: 12,
+		fontWeight: '700',
+		color: uiColors.textSecondary,
+	},
+	rangeChipLabelSelected: {
+		color: uiColors.tubeSelected,
+	},
 	pageRow: {
 		flexDirection: 'row',
 		alignItems: 'center',
@@ -248,12 +382,20 @@ const styles = StyleSheet.create({
 		fontWeight: '700',
 		color: uiColors.textPrimary,
 	},
-	pageLabel: {
-		fontSize: 13,
+	pageCenter: {
+		minWidth: 110,
+		alignItems: 'center',
+	},
+	pageRange: {
+		fontSize: 16,
+		fontWeight: '800',
+		color: uiColors.textPrimary,
+	},
+	pageMeta: {
+		marginTop: 2,
+		fontSize: 11,
 		fontWeight: '600',
 		color: uiColors.textSecondary,
-		minWidth: 56,
-		textAlign: 'center',
 	},
 	legend: {
 		flexDirection: 'row',
@@ -326,6 +468,9 @@ const styles = StyleSheet.create({
 	},
 	cellLabelCompleted: {
 		color: uiColors.completed,
+	},
+	cellLabelCurrent: {
+		color: uiColors.tubeSelected,
 	},
 	check: {
 		position: 'absolute',

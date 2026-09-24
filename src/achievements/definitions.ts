@@ -6,6 +6,9 @@ export type AchievementId =
 	| 'getting_into_it'
 	| 'half_century'
 	| 'sort_master'
+	| 'veteran_250'
+	| 'master_500'
+	| 'legend_1000'
 	| 'independent'
 	| 'own_head'
 	| 'no_hints'
@@ -70,6 +73,30 @@ export const ACHIEVEMENT_DEFINITIONS: readonly AchievementDefinition[] = [
 		title: 'Мастер сортировки',
 		description: 'Пройдите все 100 уровней кампании',
 		target: 100,
+		progressOf: (s) => s.levelsCompleted,
+		reconstructible: true,
+	},
+	{
+		id: 'veteran_250',
+		title: 'Опытный сортировщик',
+		description: 'Пройдите 250 уровней',
+		target: 250,
+		progressOf: (s) => s.levelsCompleted,
+		reconstructible: true,
+	},
+	{
+		id: 'master_500',
+		title: 'Большая сортировка',
+		description: 'Пройдите 500 уровней',
+		target: 500,
+		progressOf: (s) => s.levelsCompleted,
+		reconstructible: true,
+	},
+	{
+		id: 'legend_1000',
+		title: 'Легенда сортировки',
+		description: 'Пройдите 1000 уровней',
+		target: 1000,
 		progressOf: (s) => s.levelsCompleted,
 		reconstructible: true,
 	},

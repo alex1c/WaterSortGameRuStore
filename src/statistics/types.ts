@@ -1,4 +1,4 @@
-import type { CampaignDifficultyBand } from '../campaign/config'
+import { CAMPAIGN_LEVEL_COUNT, type CampaignDifficultyBand } from '../campaign/config'
 
 /**
  * Cumulative gameplay statistics.
@@ -72,12 +72,13 @@ export function createFreshAttemptFlags(): AttemptFlags {
 
 /**
  * Derive how many campaign levels are reliably completed from unlock state.
- * Completing N unlocks N+1 (capped at 100); campaignComplete means all 100.
+ * Completing N unlocks N+1 (capped at CAMPAIGN_LEVEL_COUNT);
+ * campaignComplete means the full current campaign milestone is done.
  */
 export function inferCompletedLevelCount(
 	highestUnlockedLevel: number,
 	campaignComplete: boolean,
 ): number {
-	if (campaignComplete) return 100
-	return Math.max(0, Math.min(100, highestUnlockedLevel - 1))
+	if (campaignComplete) return CAMPAIGN_LEVEL_COUNT
+	return Math.max(0, Math.min(CAMPAIGN_LEVEL_COUNT, highestUnlockedLevel - 1))
 }

@@ -16,6 +16,7 @@ import {
 	ABOUT_OTHER_APPS_URL,
 	ABOUT_WEBSITE_URL,
 } from '../about/config'
+import { CAMPAIGN_LEVEL_COUNT } from '../campaign'
 import { spacing, uiColors } from '../theme'
 
 interface AboutScreenProps {
@@ -62,7 +63,7 @@ export function AboutScreen({ onClose }: AboutScreenProps) {
 			<ScrollView contentContainerStyle={styles.content}>
 				<Text style={styles.appName}>{ABOUT_APP_NAME}</Text>
 				<Text style={styles.meta}>{ABOUT_DEVELOPER}</Text>
-				<Text style={styles.meta}>Кампания: уровни 1–100</Text>
+				<Text style={styles.meta}>Кампания: уровни 1–{CAMPAIGN_LEVEL_COUNT}</Text>
 				<Text style={styles.meta}>Версия 1.0.0</Text>
 
 				<Pressable

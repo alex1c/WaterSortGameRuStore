@@ -1,0 +1,706 @@
+{
+  "note": "Frozen pre-PH8A identities. Do not regenerate after campaign extension.",
+  "count": 100,
+  "identities": [
+    {
+      "level": 1,
+      "seed": "watersort-campaign-v1-level-1",
+      "exactHash": "ab14fcd072116f5b",
+      "equivHash": "1e72a2880b03b92e",
+      "exact": "[[\"color-1\",\"color-2\",\"color-2\",\"color-1\"],[\"color-1\",\"color-2\",\"color-1\",\"color-2\"],[],[]]"
+    },
+    {
+      "level": 2,
+      "seed": "watersort-campaign-v1-level-2",
+      "exactHash": "04311d8fdb7a97dd",
+      "equivHash": "8c7455a62ec9bb5f",
+      "exact": "[[\"color-2\",\"color-2\",\"color-1\",\"color-1\"],[\"color-1\",\"color-2\",\"color-1\",\"color-2\"],[],[]]"
+    },
+    {
+      "level": 3,
+      "seed": "watersort-campaign-v1-level-3",
+      "exactHash": "738078ec48c40ee9",
+      "equivHash": "738078ec48c40ee9",
+      "exact": "[[\"color-2\",\"color-1\",\"color-2\",\"color-1\"],[\"color-2\",\"color-1\",\"color-2\",\"color-1\"],[],[]]"
+    },
+    {
+      "level": 4,
+      "seed": "watersort-campaign-v1-level-4",
+      "exactHash": "3c02149a7eb553ab",
+      "equivHash": "3c02149a7eb553ab",
+      "exact": "[[\"color-1\",\"color-1\",\"color-1\",\"color-2\"],[\"color-2\",\"color-1\",\"color-2\",\"color-2\"],[],[]]"
+    },
+    {
+      "level": 5,
+      "seed": "watersort-campaign-v1-level-5-calibrated",
+      "exactHash": "e4ea6dc8b0f28fde",
+      "equivHash": "89b1b16151c7c0ee",
+      "exact": "[[\"color-2\",\"color-1\",\"color-2\",\"color-1\"],[\"color-1\",\"color-2\",\"color-2\",\"color-1\"],[],[]]"
+    },
+    {
+      "level": 6,
+      "seed": "watersort-campaign-v1-level-6",
+      "exactHash": "05b80d9382b91c16",
+      "equivHash": "8a6af0685d318166",
+      "exact": "[[\"color-2\",\"color-2\",\"color-2\",\"color-3\"],[\"color-1\",\"color-1\",\"color-1\",\"color-2\"],[\"color-3\",\"color-3\",\"color-1\",\"color-3\"],[],[]]"
+    },
+    {
+      "level": 7,
+      "seed": "watersort-campaign-v1-level-7",
+      "exactHash": "43b07aa90aac24d4",
+      "equivHash": "48860e3ab89de2fa",
+      "exact": "[[\"color-3\",\"color-1\",\"color-3\",\"color-1\"],[\"color-2\",\"color-2\",\"color-2\",\"color-2\"],[\"color-3\",\"color-1\",\"color-1\",\"color-3\"],[],[]]"
+    },
+    {
+      "level": 8,
+      "seed": "watersort-campaign-v1-level-8",
+      "exactHash": "9d949e6908c8bfb5",
+      "equivHash": "571583b5cdf26a4c",
+      "exact": "[[\"color-3\",\"color-3\",\"color-2\",\"color-2\"],[\"color-1\",\"color-3\",\"color-3\",\"color-2\"],[\"color-1\",\"color-2\",\"color-1\",\"color-1\"],[],[]]"
+    },
+    {
+      "level": 9,
+      "seed": "watersort-campaign-v1-level-9",
+      "exactHash": "e828b8811317fd0f",
+      "equivHash": "914bf1e0b5037a3e",
+      "exact": "[[\"color-1\",\"color-1\",\"color-3\",\"color-3\"],[\"color-3\",\"color-3\",\"color-2\",\"color-2\"],[\"color-2\",\"color-2\",\"color-1\",\"color-1\"],[],[]]"
+    },
+    {
+      "level": 10,
+      "seed": "watersort-campaign-v1-level-10",
+      "exactHash": "11083d906b325c65",
+      "equivHash": "11083d906b325c65",
+      "exact": "[[\"color-2\",\"color-2\",\"color-1\",\"color-1\"],[\"color-3\",\"color-2\",\"color-2\",\"color-1\"],[\"color-3\",\"color-3\",\"color-3\",\"color-1\"],[],[]]"
+    },
+    {
+      "level": 11,
+      "seed": "watersort-campaign-v1-level-11",
+      "exactHash": "12610daeaddbad7f",
+      "equivHash": "95da62cbcde58388",
+      "exact": "[[\"color-3\",\"color-4\",\"color-2\",\"color-3\"],[\"color-2\",\"color-1\",\"color-3\",\"color-4\"],[\"color-2\",\"color-4\",\"color-2\",\"color-3\"],[\"color-1\",\"color-4\",\"color-1\",\"color-1\"],[],[]]"
+    },
+    {
+      "level": 12,
+      "seed": "watersort-campaign-v1-level-12",
+      "exactHash": "31fd9cc22fd96502",
+      "equivHash": "6c4b3c3536dd7d7d",
+      "exact": "[[\"color-1\",\"color-4\",\"color-1\",\"color-2\"],[\"color-4\",\"color-3\",\"color-4\",\"color-1\"],[\"color-2\",\"color-3\",\"color-3\",\"color-4\"],[\"color-1\",\"color-2\",\"color-3\",\"color-2\"],[],[]]"
+    },
+    {
+      "level": 13,
+      "seed": "watersort-campaign-v1-level-13",
+      "exactHash": "3ce69f40e37c75ca",
+      "equivHash": "00652079a17281a4",
+      "exact": "[[\"color-4\",\"color-4\",\"color-3\",\"color-2\"],[\"color-1\",\"color-2\",\"color-1\",\"color-2\"],[\"color-3\",\"color-3\",\"color-1\",\"color-2\"],[\"color-1\",\"color-4\",\"color-4\",\"color-3\"],[],[]]"
+    },
+    {
+      "level": 14,
+      "seed": "watersort-campaign-v1-level-14",
+      "exactHash": "91d25057a75388af",
+      "equivHash": "7e4586baf620ff31",
+      "exact": "[[\"color-3\",\"color-3\",\"color-4\",\"color-1\"],[\"color-2\",\"color-3\",\"color-1\",\"color-2\"],[\"color-3\",\"color-4\",\"color-2\",\"color-2\"],[\"color-1\",\"color-4\",\"color-4\",\"color-1\"],[],[]]"
+    },
+    {
+      "level": 15,
+      "seed": "watersort-campaign-v1-level-15",
+      "exactHash": "eecef09b5edfcd99",
+      "equivHash": "f5caf3d9f96625e1",
+      "exact": "[[\"color-3\",\"color-4\",\"color-1\",\"color-3\"],[\"color-4\",\"color-1\",\"color-1\",\"color-1\"],[\"color-2\",\"color-3\",\"color-3\",\"color-4\"],[\"color-2\",\"color-2\",\"color-4\",\"color-2\"],[],[]]"
+    },
+    {
+      "level": 16,
+      "seed": "watersort-campaign-v1-level-16",
+      "exactHash": "b178c17d1916e1df",
+      "equivHash": "ee2ab5fb50f31cb0",
+      "exact": "[[\"color-3\",\"color-3\",\"color-4\",\"color-3\"],[\"color-4\",\"color-1\",\"color-1\",\"color-2\"],[\"color-2\",\"color-2\",\"color-1\",\"color-3\"],[\"color-2\",\"color-1\",\"color-4\",\"color-4\"],[],[]]"
+    },
+    {
+      "level": 17,
+      "seed": "watersort-campaign-v1-level-17",
+      "exactHash": "c97e23a6d16a31f7",
+      "equivHash": "f146787b930d3792",
+      "exact": "[[\"color-4\",\"color-3\",\"color-2\",\"color-3\"],[\"color-1\",\"color-3\",\"color-1\",\"color-2\"],[\"color-2\",\"color-4\",\"color-1\",\"color-2\"],[\"color-4\",\"color-3\",\"color-4\",\"color-1\"],[],[]]"
+    },
+    {
+      "level": 18,
+      "seed": "watersort-campaign-v1-level-18",
+      "exactHash": "0747438c05896d13",
+      "equivHash": "81688e0b83199d24",
+      "exact": "[[\"color-1\",\"color-3\",\"color-4\",\"color-3\"],[\"color-2\",\"color-3\",\"color-4\",\"color-4\"],[\"color-1\",\"color-4\",\"color-2\",\"color-2\"],[\"color-2\",\"color-3\",\"color-1\",\"color-1\"],[],[]]"
+    },
+    {
+      "level": 19,
+      "seed": "watersort-campaign-v1-level-19",
+      "exactHash": "8eddd623e9ac5576",
+      "equivHash": "35d6c989c6affd60",
+      "exact": "[[\"color-4\",\"color-2\",\"color-1\",\"color-4\"],[\"color-4\",\"color-4\",\"color-2\",\"color-1\"],[\"color-2\",\"color-5\",\"color-5\",\"color-5\"],[\"color-3\",\"color-3\",\"color-3\",\"color-5\"],[\"color-1\",\"color-1\",\"color-3\",\"color-2\"],[],[]]"
+    },
+    {
+      "level": 20,
+      "seed": "watersort-campaign-v1-level-20",
+      "exactHash": "3e8021904ddf372b",
+      "equivHash": "ee48d8b65acb961c",
+      "exact": "[[\"color-4\",\"color-5\",\"color-1\",\"color-3\"],[\"color-5\",\"color-1\",\"color-2\",\"color-2\"],[\"color-4\",\"color-2\",\"color-1\",\"color-5\"],[\"color-1\",\"color-4\",\"color-3\",\"color-3\"],[\"color-2\",\"color-5\",\"color-4\",\"color-3\"],[],[]]"
+    },
+    {
+      "level": 21,
+      "seed": "watersort-campaign-v1-level-21",
+      "exactHash": "771a8eb09f6734f4",
+      "equivHash": "5f4f7df19f09904f",
+      "exact": "[[\"color-2\",\"color-3\",\"color-5\",\"color-2\"],[\"color-1\",\"color-3\",\"color-2\",\"color-4\"],[\"color-4\",\"color-4\",\"color-4\",\"color-5\"],[\"color-3\",\"color-1\",\"color-5\",\"color-3\"],[\"color-2\",\"color-1\",\"color-1\",\"color-5\"],[],[]]"
+    },
+    {
+      "level": 22,
+      "seed": "watersort-campaign-v1-level-22",
+      "exactHash": "9e005324157df1ea",
+      "equivHash": "242100e147037f8b",
+      "exact": "[[\"color-5\",\"color-2\",\"color-4\",\"color-3\"],[\"color-1\",\"color-1\",\"color-5\",\"color-5\"],[\"color-3\",\"color-3\",\"color-2\",\"color-1\"],[\"color-5\",\"color-2\",\"color-3\",\"color-4\"],[\"color-2\",\"color-4\",\"color-4\",\"color-1\"],[],[]]"
+    },
+    {
+      "level": 23,
+      "seed": "watersort-campaign-v1-level-23",
+      "exactHash": "37b8cc83de9dcb20",
+      "equivHash": "0ac0ddf6754e0cec",
+      "exact": "[[\"color-1\",\"color-5\",\"color-4\",\"color-5\"],[\"color-2\",\"color-3\",\"color-5\",\"color-2\"],[\"color-5\",\"color-2\",\"color-4\",\"color-1\"],[\"color-3\",\"color-4\",\"color-1\",\"color-1\"],[\"color-2\",\"color-4\",\"color-3\",\"color-3\"],[],[]]"
+    },
+    {
+      "level": 24,
+      "seed": "watersort-campaign-v1-level-24",
+      "exactHash": "971375a4d675e8e3",
+      "equivHash": "9f1fc2d678ab3cb8",
+      "exact": "[[\"color-1\",\"color-5\",\"color-2\",\"color-4\"],[\"color-5\",\"color-4\",\"color-4\",\"color-3\"],[\"color-3\",\"color-2\",\"color-2\",\"color-5\"],[\"color-1\",\"color-5\",\"color-2\",\"color-1\"],[\"color-4\",\"color-3\",\"color-3\",\"color-1\"],[],[]]"
+    },
+    {
+      "level": 25,
+      "seed": "watersort-campaign-v1-level-25",
+      "exactHash": "20928ba0d03c1525",
+      "equivHash": "6da47b56cc69ab00",
+      "exact": "[[\"color-3\",\"color-1\",\"color-3\",\"color-2\"],[\"color-4\",\"color-4\",\"color-3\",\"color-3\"],[\"color-4\",\"color-4\",\"color-2\",\"color-2\"],[\"color-5\",\"color-1\",\"color-1\",\"color-1\"],[\"color-5\",\"color-5\",\"color-5\",\"color-2\"],[],[]]"
+    },
+    {
+      "level": 26,
+      "seed": "watersort-campaign-v1-level-26",
+      "exactHash": "aa133d568eb38230",
+      "equivHash": "2678c1583153fe78",
+      "exact": "[[\"color-4\",\"color-1\",\"color-1\",\"color-5\"],[\"color-1\",\"color-2\",\"color-5\",\"color-3\"],[\"color-2\",\"color-2\",\"color-3\",\"color-1\"],[\"color-4\",\"color-2\",\"color-3\",\"color-3\"],[\"color-4\",\"color-4\",\"color-5\",\"color-5\"],[],[]]"
+    },
+    {
+      "level": 27,
+      "seed": "watersort-campaign-v1-level-27",
+      "exactHash": "70c9851e78a17ab5",
+      "equivHash": "00f8ace513fce707",
+      "exact": "[[\"color-1\",\"color-1\",\"color-5\",\"color-3\"],[\"color-5\",\"color-3\",\"color-5\",\"color-5\"],[\"color-2\",\"color-2\",\"color-4\",\"color-2\"],[\"color-1\",\"color-3\",\"color-1\",\"color-2\"],[\"color-4\",\"color-4\",\"color-4\",\"color-3\"],[],[]]"
+    },
+    {
+      "level": 28,
+      "seed": "watersort-campaign-v1-level-28",
+      "exactHash": "ca35190e3ca5590b",
+      "equivHash": "4ae393ebb3da5f1e",
+      "exact": "[[\"color-5\",\"color-3\",\"color-3\",\"color-5\"],[\"color-2\",\"color-5\",\"color-2\",\"color-5\"],[\"color-4\",\"color-1\",\"color-3\",\"color-3\"],[\"color-4\",\"color-1\",\"color-4\",\"color-4\"],[\"color-1\",\"color-2\",\"color-1\",\"color-2\"],[],[]]"
+    },
+    {
+      "level": 29,
+      "seed": "watersort-campaign-v1-level-29",
+      "exactHash": "fbc12d717e59e01e",
+      "equivHash": "22fea2d8fa6af325",
+      "exact": "[[\"color-2\",\"color-2\",\"color-2\",\"color-1\"],[\"color-4\",\"color-5\",\"color-3\",\"color-5\"],[\"color-1\",\"color-1\",\"color-4\",\"color-2\"],[\"color-4\",\"color-3\",\"color-5\",\"color-1\"],[\"color-4\",\"color-3\",\"color-5\",\"color-3\"],[],[]]"
+    },
+    {
+      "level": 30,
+      "seed": "watersort-campaign-v1-level-30",
+      "exactHash": "df10259e9574aea8",
+      "equivHash": "df10259e9574aea8",
+      "exact": "[[\"color-1\",\"color-1\",\"color-2\",\"color-5\"],[\"color-1\",\"color-2\",\"color-1\",\"color-3\"],[\"color-2\",\"color-5\",\"color-4\",\"color-4\"],[\"color-3\",\"color-3\",\"color-4\",\"color-4\"],[\"color-5\",\"color-3\",\"color-2\",\"color-5\"],[],[]]"
+    },
+    {
+      "level": 31,
+      "seed": "watersort-campaign-v1-level-31",
+      "exactHash": "7d422b24ff4282f4",
+      "equivHash": "19d91d14fe6e2ce8",
+      "exact": "[[\"color-3\",\"color-6\",\"color-1\",\"color-4\"],[\"color-4\",\"color-6\",\"color-3\",\"color-1\"],[\"color-2\",\"color-2\",\"color-1\",\"color-5\"],[\"color-2\",\"color-5\",\"color-6\",\"color-4\"],[\"color-1\",\"color-3\",\"color-5\",\"color-2\"],[\"color-6\",\"color-5\",\"color-3\",\"color-4\"],[],[]]"
+    },
+    {
+      "level": 32,
+      "seed": "watersort-campaign-v1-level-32",
+      "exactHash": "6f056f0a5fa0c42a",
+      "equivHash": "97d546db7781dea1",
+      "exact": "[[\"color-1\",\"color-5\",\"color-3\",\"color-6\"],[\"color-2\",\"color-1\",\"color-3\",\"color-4\"],[\"color-5\",\"color-6\",\"color-4\",\"color-1\"],[\"color-3\",\"color-1\",\"color-5\",\"color-2\"],[\"color-2\",\"color-3\",\"color-5\",\"color-6\"],[\"color-2\",\"color-4\",\"color-6\",\"color-4\"],[],[]]"
+    },
+    {
+      "level": 33,
+      "seed": "watersort-campaign-v1-level-33",
+      "exactHash": "b065c5461108da46",
+      "equivHash": "479ddaa478054f54",
+      "exact": "[[\"color-1\",\"color-3\",\"color-1\",\"color-6\"],[\"color-3\",\"color-6\",\"color-2\",\"color-1\"],[\"color-4\",\"color-5\",\"color-3\",\"color-3\"],[\"color-5\",\"color-4\",\"color-1\",\"color-6\"],[\"color-2\",\"color-5\",\"color-5\",\"color-2\"],[\"color-2\",\"color-6\",\"color-4\",\"color-4\"],[],[]]"
+    },
+    {
+      "level": 34,
+      "seed": "watersort-campaign-v1-level-34",
+      "exactHash": "32c3e70c13def8fd",
+      "equivHash": "8afee4e522579ec6",
+      "exact": "[[\"color-4\",\"color-6\",\"color-4\",\"color-2\"],[\"color-1\",\"color-5\",\"color-6\",\"color-3\"],[\"color-6\",\"color-5\",\"color-2\",\"color-3\"],[\"color-1\",\"color-2\",\"color-1\",\"color-1\"],[\"color-3\",\"color-4\",\"color-5\",\"color-3\"],[\"color-6\",\"color-2\",\"color-4\",\"color-5\"],[],[]]"
+    },
+    {
+      "level": 35,
+      "seed": "watersort-campaign-v1-level-35",
+      "exactHash": "c3517a06ea3f1432",
+      "equivHash": "04d428d9eca9a31b",
+      "exact": "[[\"color-3\",\"color-3\",\"color-1\",\"color-4\"],[\"color-6\",\"color-3\",\"color-6\",\"color-1\"],[\"color-4\",\"color-2\",\"color-1\",\"color-5\"],[\"color-6\",\"color-3\",\"color-4\",\"color-5\"],[\"color-2\",\"color-5\",\"color-6\",\"color-1\"],[\"color-5\",\"color-4\",\"color-2\",\"color-2\"],[],[]]"
+    },
+    {
+      "level": 36,
+      "seed": "watersort-campaign-v1-level-36",
+      "exactHash": "b8ae3002e188b915",
+      "equivHash": "1ba492b453c16569",
+      "exact": "[[\"color-3\",\"color-5\",\"color-2\",\"color-1\"],[\"color-4\",\"color-2\",\"color-5\",\"color-4\"],[\"color-3\",\"color-2\",\"color-4\",\"color-6\"],[\"color-5\",\"color-3\",\"color-5\",\"color-6\"],[\"color-6\",\"color-1\",\"color-1\",\"color-6\"],[\"color-3\",\"color-4\",\"color-1\",\"color-2\"],[],[]]"
+    },
+    {
+      "level": 37,
+      "seed": "watersort-campaign-v1-level-37",
+      "exactHash": "1958fe4e6b61db3d",
+      "equivHash": "551f290ff2ef303c",
+      "exact": "[[\"color-3\",\"color-6\",\"color-6\",\"color-2\"],[\"color-4\",\"color-1\",\"color-2\",\"color-4\"],[\"color-6\",\"color-1\",\"color-5\",\"color-1\"],[\"color-6\",\"color-4\",\"color-5\",\"color-2\"],[\"color-3\",\"color-5\",\"color-5\",\"color-1\"],[\"color-2\",\"color-3\",\"color-3\",\"color-4\"],[],[]]"
+    },
+    {
+      "level": 38,
+      "seed": "watersort-campaign-v1-level-38",
+      "exactHash": "60c346119a34a529",
+      "equivHash": "4eabf2e3f265b297",
+      "exact": "[[\"color-5\",\"color-2\",\"color-6\",\"color-6\"],[\"color-3\",\"color-5\",\"color-3\",\"color-2\"],[\"color-2\",\"color-5\",\"color-1\",\"color-1\"],[\"color-3\",\"color-6\",\"color-4\",\"color-3\"],[\"color-6\",\"color-2\",\"color-4\",\"color-1\"],[\"color-4\",\"color-4\",\"color-1\",\"color-5\"],[],[]]"
+    },
+    {
+      "level": 39,
+      "seed": "watersort-campaign-v1-level-39",
+      "exactHash": "1a1b1bc38b75b850",
+      "equivHash": "c4f34ecd6d21715a",
+      "exact": "[[\"color-1\",\"color-5\",\"color-4\",\"color-5\"],[\"color-3\",\"color-4\",\"color-3\",\"color-6\"],[\"color-4\",\"color-3\",\"color-6\",\"color-5\"],[\"color-6\",\"color-2\",\"color-5\",\"color-6\"],[\"color-2\",\"color-2\",\"color-1\",\"color-4\"],[\"color-2\",\"color-3\",\"color-1\",\"color-1\"],[],[]]"
+    },
+    {
+      "level": 40,
+      "seed": "watersort-campaign-v1-level-40",
+      "exactHash": "5268b92db1839fff",
+      "equivHash": "341d425cab746851",
+      "exact": "[[\"color-4\",\"color-5\",\"color-6\",\"color-1\"],[\"color-6\",\"color-4\",\"color-2\",\"color-2\"],[\"color-6\",\"color-3\",\"color-1\",\"color-5\"],[\"color-2\",\"color-3\",\"color-2\",\"color-6\"],[\"color-4\",\"color-3\",\"color-4\",\"color-5\"],[\"color-1\",\"color-1\",\"color-5\",\"color-3\"],[],[]]"
+    },
+    {
+      "level": 41,
+      "seed": "watersort-campaign-v1-level-41",
+      "exactHash": "156cf0600569d5a7",
+      "equivHash": "3c7c15b626b1e3e1",
+      "exact": "[[\"color-3\",\"color-4\",\"color-5\",\"color-4\"],[\"color-4\",\"color-2\",\"color-5\",\"color-1\"],[\"color-6\",\"color-1\",\"color-6\",\"color-5\"],[\"color-3\",\"color-2\",\"color-4\",\"color-6\"],[\"color-1\",\"color-5\",\"color-6\",\"color-3\"],[\"color-1\",\"color-2\",\"color-3\",\"color-2\"],[],[]]"
+    },
+    {
+      "level": 42,
+      "seed": "watersort-campaign-v1-level-42",
+      "exactHash": "40701b18e4fb4d09",
+      "equivHash": "3bd326700d96ed40",
+      "exact": "[[\"color-6\",\"color-6\",\"color-5\",\"color-3\"],[\"color-3\",\"color-4\",\"color-3\",\"color-1\"],[\"color-2\",\"color-2\",\"color-1\",\"color-1\"],[\"color-6\",\"color-4\",\"color-2\",\"color-6\"],[\"color-4\",\"color-5\",\"color-3\",\"color-2\"],[\"color-5\",\"color-1\",\"color-4\",\"color-5\"],[],[]]"
+    },
+    {
+      "level": 43,
+      "seed": "watersort-campaign-v1-level-43",
+      "exactHash": "e536f7deaa90dc8a",
+      "equivHash": "fd882898ed867f7d",
+      "exact": "[[\"color-4\",\"color-2\",\"color-1\",\"color-3\"],[\"color-7\",\"color-7\",\"color-5\",\"color-5\"],[\"color-6\",\"color-4\",\"color-2\",\"color-1\"],[\"color-4\",\"color-2\",\"color-5\",\"color-5\"],[\"color-7\",\"color-3\",\"color-4\",\"color-6\"],[\"color-1\",\"color-3\",\"color-6\",\"color-6\"],[\"color-3\",\"color-1\",\"color-7\",\"color-2\"],[],[]]"
+    },
+    {
+      "level": 44,
+      "seed": "watersort-campaign-v1-level-44",
+      "exactHash": "72993694a7c19c04",
+      "equivHash": "c3d428f9dde6637d",
+      "exact": "[[\"color-3\",\"color-6\",\"color-7\",\"color-4\"],[\"color-4\",\"color-4\",\"color-4\",\"color-7\"],[\"color-7\",\"color-2\",\"color-3\",\"color-2\"],[\"color-6\",\"color-2\",\"color-1\",\"color-3\"],[\"color-5\",\"color-2\",\"color-5\",\"color-1\"],[\"color-1\",\"color-5\",\"color-6\",\"color-1\"],[\"color-3\",\"color-6\",\"color-7\",\"color-5\"],[],[]]"
+    },
+    {
+      "level": 45,
+      "seed": "watersort-campaign-v1-level-45",
+      "exactHash": "ee527aa502ffa819",
+      "equivHash": "07bca9731fd454b2",
+      "exact": "[[\"color-6\",\"color-4\",\"color-5\",\"color-4\"],[\"color-4\",\"color-6\",\"color-2\",\"color-1\"],[\"color-7\",\"color-2\",\"color-1\",\"color-1\"],[\"color-7\",\"color-7\",\"color-5\",\"color-1\"],[\"color-3\",\"color-3\",\"color-3\",\"color-5\"],[\"color-7\",\"color-5\",\"color-4\",\"color-2\"],[\"color-2\",\"color-6\",\"color-6\",\"color-3\"],[],[]]"
+    },
+    {
+      "level": 46,
+      "seed": "watersort-campaign-v1-level-46",
+      "exactHash": "54518c1cf4b5558b",
+      "equivHash": "e9c79a299f5da7b5",
+      "exact": "[[\"color-3\",\"color-1\",\"color-5\",\"color-2\"],[\"color-1\",\"color-6\",\"color-6\",\"color-6\"],[\"color-5\",\"color-4\",\"color-2\",\"color-4\"],[\"color-7\",\"color-4\",\"color-2\",\"color-3\"],[\"color-5\",\"color-4\",\"color-7\",\"color-7\"],[\"color-6\",\"color-3\",\"color-5\",\"color-3\"],[\"color-7\",\"color-2\",\"color-1\",\"color-1\"],[],[]]"
+    },
+    {
+      "level": 47,
+      "seed": "watersort-campaign-v1-level-47",
+      "exactHash": "477a5c2a771183b6",
+      "equivHash": "b4e59689918a767c",
+      "exact": "[[\"color-2\",\"color-2\",\"color-2\",\"color-5\"],[\"color-5\",\"color-5\",\"color-4\",\"color-7\"],[\"color-2\",\"color-4\",\"color-1\",\"color-6\"],[\"color-6\",\"color-3\",\"color-4\",\"color-1\"],[\"color-3\",\"color-5\",\"color-4\",\"color-1\"],[\"color-7\",\"color-6\",\"color-7\",\"color-6\"],[\"color-3\",\"color-7\",\"color-1\",\"color-3\"],[],[]]"
+    },
+    {
+      "level": 48,
+      "seed": "watersort-campaign-v1-level-48",
+      "exactHash": "5219b109bfd1bfe1",
+      "equivHash": "13fa831d138deaff",
+      "exact": "[[\"color-2\",\"color-1\",\"color-3\",\"color-6\"],[\"color-6\",\"color-2\",\"color-5\",\"color-3\"],[\"color-4\",\"color-4\",\"color-4\",\"color-7\"],[\"color-4\",\"color-3\",\"color-7\",\"color-6\"],[\"color-7\",\"color-2\",\"color-2\",\"color-7\"],[\"color-5\",\"color-1\",\"color-5\",\"color-1\"],[\"color-3\",\"color-1\",\"color-5\",\"color-6\"],[],[]]"
+    },
+    {
+      "level": 49,
+      "seed": "watersort-campaign-v1-level-49",
+      "exactHash": "723643c76376b742",
+      "equivHash": "f07fa51a4a1d5ac7",
+      "exact": "[[\"color-6\",\"color-6\",\"color-7\",\"color-4\"],[\"color-2\",\"color-7\",\"color-2\",\"color-1\"],[\"color-5\",\"color-1\",\"color-5\",\"color-6\"],[\"color-3\",\"color-3\",\"color-4\",\"color-4\"],[\"color-7\",\"color-6\",\"color-4\",\"color-3\"],[\"color-2\",\"color-5\",\"color-3\",\"color-1\"],[\"color-1\",\"color-2\",\"color-7\",\"color-5\"],[],[]]"
+    },
+    {
+      "level": 50,
+      "seed": "watersort-campaign-v1-level-50",
+      "exactHash": "5003bba492118b09",
+      "equivHash": "50e94e5b90374733",
+      "exact": "[[\"color-2\",\"color-6\",\"color-7\",\"color-1\"],[\"color-4\",\"color-6\",\"color-5\",\"color-2\"],[\"color-7\",\"color-1\",\"color-4\",\"color-2\"],[\"color-7\",\"color-3\",\"color-6\",\"color-5\"],[\"color-4\",\"color-7\",\"color-3\",\"color-5\"],[\"color-3\",\"color-6\",\"color-3\",\"color-4\"],[\"color-1\",\"color-5\",\"color-2\",\"color-1\"],[],[]]"
+    },
+    {
+      "level": 51,
+      "seed": "watersort-campaign-v1-level-51",
+      "exactHash": "427f0edc4c9ad15c",
+      "equivHash": "29d590834e74ba31",
+      "exact": "[[\"color-3\",\"color-1\",\"color-4\",\"color-1\"],[\"color-6\",\"color-7\",\"color-4\",\"color-5\"],[\"color-6\",\"color-7\",\"color-2\",\"color-5\"],[\"color-3\",\"color-7\",\"color-6\",\"color-4\"],[\"color-6\",\"color-2\",\"color-5\",\"color-5\"],[\"color-3\",\"color-1\",\"color-3\",\"color-2\"],[\"color-2\",\"color-1\",\"color-4\",\"color-7\"],[],[]]"
+    },
+    {
+      "level": 52,
+      "seed": "watersort-campaign-v1-level-52",
+      "exactHash": "cc0df6fb547c4967",
+      "equivHash": "464015d69f3d3de6",
+      "exact": "[[\"color-7\",\"color-2\",\"color-4\",\"color-6\"],[\"color-1\",\"color-5\",\"color-6\",\"color-4\"],[\"color-5\",\"color-3\",\"color-1\",\"color-1\"],[\"color-7\",\"color-2\",\"color-3\",\"color-4\"],[\"color-6\",\"color-1\",\"color-7\",\"color-7\"],[\"color-6\",\"color-2\",\"color-4\",\"color-5\"],[\"color-2\",\"color-3\",\"color-3\",\"color-5\"],[],[]]"
+    },
+    {
+      "level": 53,
+      "seed": "watersort-campaign-v1-level-53",
+      "exactHash": "bbd56b89d28b2ca1",
+      "equivHash": "84d5a2490fe3c5c7",
+      "exact": "[[\"color-5\",\"color-7\",\"color-7\",\"color-1\"],[\"color-5\",\"color-2\",\"color-4\",\"color-2\"],[\"color-1\",\"color-6\",\"color-4\",\"color-2\"],[\"color-7\",\"color-5\",\"color-1\",\"color-3\"],[\"color-1\",\"color-7\",\"color-5\",\"color-3\"],[\"color-3\",\"color-6\",\"color-4\",\"color-4\"],[\"color-6\",\"color-6\",\"color-2\",\"color-3\"],[],[]]"
+    },
+    {
+      "level": 54,
+      "seed": "watersort-campaign-v1-level-54",
+      "exactHash": "ff685af86b02335d",
+      "equivHash": "4a6bccbcb19cbddd",
+      "exact": "[[\"color-6\",\"color-2\",\"color-7\",\"color-6\"],[\"color-3\",\"color-3\",\"color-4\",\"color-7\"],[\"color-2\",\"color-4\",\"color-1\",\"color-5\"],[\"color-5\",\"color-7\",\"color-6\",\"color-7\"],[\"color-3\",\"color-6\",\"color-5\",\"color-2\"],[\"color-2\",\"color-1\",\"color-3\",\"color-4\"],[\"color-5\",\"color-4\",\"color-1\",\"color-1\"],[],[]]"
+    },
+    {
+      "level": 55,
+      "seed": "watersort-campaign-v1-level-55",
+      "exactHash": "0243c1b9f1966263",
+      "equivHash": "abbfdcaaddb9e498",
+      "exact": "[[\"color-3\",\"color-1\",\"color-1\",\"color-5\"],[\"color-5\",\"color-7\",\"color-7\",\"color-6\"],[\"color-4\",\"color-6\",\"color-5\",\"color-1\"],[\"color-2\",\"color-4\",\"color-6\",\"color-3\"],[\"color-2\",\"color-6\",\"color-2\",\"color-4\"],[\"color-3\",\"color-1\",\"color-7\",\"color-7\"],[\"color-2\",\"color-5\",\"color-3\",\"color-4\"],[],[]]"
+    },
+    {
+      "level": 56,
+      "seed": "watersort-campaign-v1-level-56",
+      "exactHash": "0d797b336da170b1",
+      "equivHash": "70380024c730bb79",
+      "exact": "[[\"color-3\",\"color-6\",\"color-8\",\"color-4\"],[\"color-8\",\"color-7\",\"color-4\",\"color-3\"],[\"color-1\",\"color-6\",\"color-7\",\"color-5\"],[\"color-2\",\"color-2\",\"color-2\",\"color-6\"],[\"color-3\",\"color-3\",\"color-7\",\"color-1\"],[\"color-1\",\"color-2\",\"color-6\",\"color-8\"],[\"color-8\",\"color-4\",\"color-5\",\"color-1\"],[\"color-5\",\"color-5\",\"color-4\",\"color-7\"],[],[]]"
+    },
+    {
+      "level": 57,
+      "seed": "watersort-campaign-v1-level-57",
+      "exactHash": "de6bba9517886918",
+      "equivHash": "ba7ab547a0f3ee53",
+      "exact": "[[\"color-1\",\"color-4\",\"color-7\",\"color-2\"],[\"color-6\",\"color-4\",\"color-5\",\"color-5\"],[\"color-4\",\"color-2\",\"color-7\",\"color-8\"],[\"color-7\",\"color-4\",\"color-2\",\"color-8\"],[\"color-7\",\"color-5\",\"color-2\",\"color-6\"],[\"color-1\",\"color-3\",\"color-3\",\"color-6\"],[\"color-8\",\"color-3\",\"color-3\",\"color-6\"],[\"color-1\",\"color-5\",\"color-1\",\"color-8\"],[],[]]"
+    },
+    {
+      "level": 58,
+      "seed": "watersort-campaign-v1-level-58",
+      "exactHash": "ec9c23dccba6ed3a",
+      "equivHash": "42513c5a1f747d17",
+      "exact": "[[\"color-5\",\"color-2\",\"color-6\",\"color-6\"],[\"color-4\",\"color-1\",\"color-1\",\"color-2\"],[\"color-4\",\"color-3\",\"color-2\",\"color-7\"],[\"color-7\",\"color-6\",\"color-7\",\"color-8\"],[\"color-4\",\"color-4\",\"color-5\",\"color-7\"],[\"color-5\",\"color-5\",\"color-8\",\"color-8\"],[\"color-6\",\"color-8\",\"color-3\",\"color-2\"],[\"color-3\",\"color-1\",\"color-1\",\"color-3\"],[],[]]"
+    },
+    {
+      "level": 59,
+      "seed": "watersort-campaign-v1-level-59",
+      "exactHash": "e5c682f95426c9ee",
+      "equivHash": "c0803b6e0631dfae",
+      "exact": "[[\"color-4\",\"color-2\",\"color-2\",\"color-8\"],[\"color-6\",\"color-8\",\"color-5\",\"color-5\"],[\"color-5\",\"color-1\",\"color-5\",\"color-1\"],[\"color-7\",\"color-8\",\"color-1\",\"color-2\"],[\"color-6\",\"color-4\",\"color-2\",\"color-7\"],[\"color-1\",\"color-4\",\"color-3\",\"color-4\"],[\"color-3\",\"color-7\",\"color-6\",\"color-3\"],[\"color-6\",\"color-8\",\"color-3\",\"color-7\"],[],[]]"
+    },
+    {
+      "level": 60,
+      "seed": "watersort-campaign-v1-level-60",
+      "exactHash": "9b3526a070863ac4",
+      "equivHash": "120e0f18141f736c",
+      "exact": "[[\"color-4\",\"color-2\",\"color-8\",\"color-6\"],[\"color-2\",\"color-7\",\"color-5\",\"color-6\"],[\"color-1\",\"color-3\",\"color-8\",\"color-1\"],[\"color-4\",\"color-7\",\"color-5\",\"color-4\"],[\"color-2\",\"color-1\",\"color-8\",\"color-1\"],[\"color-8\",\"color-6\",\"color-7\",\"color-7\"],[\"color-5\",\"color-3\",\"color-3\",\"color-2\"],[\"color-3\",\"color-6\",\"color-4\",\"color-5\"],[],[]]"
+    },
+    {
+      "level": 61,
+      "seed": "watersort-campaign-v1-level-61",
+      "exactHash": "f4f5870a97e11b29",
+      "equivHash": "1d34739b7d66d083",
+      "exact": "[[\"color-3\",\"color-8\",\"color-5\",\"color-8\"],[\"color-4\",\"color-5\",\"color-7\",\"color-1\"],[\"color-8\",\"color-6\",\"color-7\",\"color-2\"],[\"color-3\",\"color-4\",\"color-7\",\"color-3\"],[\"color-3\",\"color-5\",\"color-8\",\"color-2\"],[\"color-7\",\"color-4\",\"color-4\",\"color-1\"],[\"color-2\",\"color-5\",\"color-1\",\"color-1\"],[\"color-2\",\"color-6\",\"color-6\",\"color-6\"],[],[]]"
+    },
+    {
+      "level": 62,
+      "seed": "watersort-campaign-v1-level-62",
+      "exactHash": "aaa8494ee334e4aa",
+      "equivHash": "0fb0504e49d2f8cc",
+      "exact": "[[\"color-4\",\"color-7\",\"color-8\",\"color-8\"],[\"color-3\",\"color-6\",\"color-2\",\"color-2\"],[\"color-5\",\"color-2\",\"color-7\",\"color-6\"],[\"color-2\",\"color-1\",\"color-7\",\"color-3\"],[\"color-6\",\"color-5\",\"color-4\",\"color-8\"],[\"color-6\",\"color-4\",\"color-8\",\"color-3\"],[\"color-3\",\"color-1\",\"color-5\",\"color-7\"],[\"color-4\",\"color-1\",\"color-1\",\"color-5\"],[],[]]"
+    },
+    {
+      "level": 63,
+      "seed": "watersort-campaign-v1-level-63",
+      "exactHash": "a76da8464a642746",
+      "equivHash": "374e91f50a3cd56b",
+      "exact": "[[\"color-7\",\"color-2\",\"color-3\",\"color-6\"],[\"color-1\",\"color-4\",\"color-5\",\"color-8\"],[\"color-2\",\"color-1\",\"color-5\",\"color-4\"],[\"color-8\",\"color-5\",\"color-1\",\"color-8\"],[\"color-7\",\"color-5\",\"color-3\",\"color-3\"],[\"color-7\",\"color-1\",\"color-4\",\"color-3\"],[\"color-6\",\"color-6\",\"color-6\",\"color-2\"],[\"color-8\",\"color-2\",\"color-4\",\"color-7\"],[],[]]"
+    },
+    {
+      "level": 64,
+      "seed": "watersort-campaign-v1-level-64",
+      "exactHash": "9594e0b7a83401bb",
+      "equivHash": "8e8097618972d8fd",
+      "exact": "[[\"color-1\",\"color-7\",\"color-2\",\"color-4\"],[\"color-1\",\"color-1\",\"color-4\",\"color-3\"],[\"color-5\",\"color-7\",\"color-5\",\"color-6\"],[\"color-7\",\"color-6\",\"color-2\",\"color-8\"],[\"color-4\",\"color-5\",\"color-8\",\"color-3\"],[\"color-3\",\"color-6\",\"color-1\",\"color-7\"],[\"color-5\",\"color-2\",\"color-8\",\"color-3\"],[\"color-4\",\"color-8\",\"color-2\",\"color-6\"],[],[]]"
+    },
+    {
+      "level": 65,
+      "seed": "watersort-campaign-v1-level-65",
+      "exactHash": "8db28a9004ec76e7",
+      "equivHash": "f440d588abc51f37",
+      "exact": "[[\"color-5\",\"color-8\",\"color-6\",\"color-2\"],[\"color-3\",\"color-2\",\"color-7\",\"color-6\"],[\"color-6\",\"color-7\",\"color-2\",\"color-4\"],[\"color-4\",\"color-3\",\"color-8\",\"color-1\"],[\"color-7\",\"color-4\",\"color-5\",\"color-5\"],[\"color-2\",\"color-1\",\"color-4\",\"color-1\"],[\"color-3\",\"color-6\",\"color-3\",\"color-5\"],[\"color-7\",\"color-8\",\"color-8\",\"color-1\"],[],[]]"
+    },
+    {
+      "level": 66,
+      "seed": "watersort-campaign-v1-level-66",
+      "exactHash": "98f5316e83f17e80",
+      "equivHash": "ae1d12134f987af2",
+      "exact": "[[\"color-5\",\"color-6\",\"color-5\",\"color-5\"],[\"color-3\",\"color-4\",\"color-2\",\"color-8\"],[\"color-1\",\"color-4\",\"color-7\",\"color-2\"],[\"color-8\",\"color-1\",\"color-8\",\"color-6\"],[\"color-3\",\"color-7\",\"color-7\",\"color-4\"],[\"color-2\",\"color-4\",\"color-1\",\"color-3\"],[\"color-1\",\"color-6\",\"color-5\",\"color-7\"],[\"color-8\",\"color-2\",\"color-6\",\"color-3\"],[],[]]"
+    },
+    {
+      "level": 67,
+      "seed": "watersort-campaign-v1-level-67",
+      "exactHash": "c275afb0efc374be",
+      "equivHash": "cf87b0a0b6770a5a",
+      "exact": "[[\"color-5\",\"color-3\",\"color-8\",\"color-5\"],[\"color-3\",\"color-4\",\"color-7\",\"color-7\"],[\"color-6\",\"color-1\",\"color-4\",\"color-2\"],[\"color-6\",\"color-6\",\"color-1\",\"color-8\"],[\"color-5\",\"color-4\",\"color-4\",\"color-2\"],[\"color-1\",\"color-8\",\"color-3\",\"color-7\"],[\"color-3\",\"color-2\",\"color-5\",\"color-2\"],[\"color-6\",\"color-7\",\"color-1\",\"color-8\"],[],[]]"
+    },
+    {
+      "level": 68,
+      "seed": "watersort-campaign-v1-level-68",
+      "exactHash": "af59c40f78a26c07",
+      "equivHash": "5ad25a995465b9a5",
+      "exact": "[[\"color-4\",\"color-5\",\"color-6\",\"color-8\"],[\"color-4\",\"color-5\",\"color-7\",\"color-1\"],[\"color-8\",\"color-3\",\"color-2\",\"color-8\"],[\"color-4\",\"color-1\",\"color-5\",\"color-3\"],[\"color-4\",\"color-3\",\"color-2\",\"color-1\"],[\"color-6\",\"color-7\",\"color-2\",\"color-5\"],[\"color-7\",\"color-3\",\"color-6\",\"color-6\"],[\"color-7\",\"color-8\",\"color-2\",\"color-1\"],[],[]]"
+    },
+    {
+      "level": 69,
+      "seed": "watersort-campaign-v1-level-69",
+      "exactHash": "3a4a84dfdc7d4d3a",
+      "equivHash": "bf760057b9e26449",
+      "exact": "[[\"color-2\",\"color-3\",\"color-6\",\"color-8\"],[\"color-5\",\"color-5\",\"color-8\",\"color-2\"],[\"color-1\",\"color-1\",\"color-3\",\"color-7\"],[\"color-4\",\"color-8\",\"color-5\",\"color-1\"],[\"color-9\",\"color-6\",\"color-4\",\"color-4\"],[\"color-7\",\"color-6\",\"color-9\",\"color-9\"],[\"color-9\",\"color-6\",\"color-1\",\"color-4\"],[\"color-3\",\"color-2\",\"color-8\",\"color-7\"],[\"color-3\",\"color-7\",\"color-2\",\"color-5\"],[],[]]"
+    },
+    {
+      "level": 70,
+      "seed": "watersort-campaign-v1-level-70",
+      "exactHash": "193c765753369dc4",
+      "equivHash": "63db62d62c9b6638",
+      "exact": "[[\"color-2\",\"color-8\",\"color-8\",\"color-7\"],[\"color-4\",\"color-1\",\"color-9\",\"color-2\"],[\"color-1\",\"color-5\",\"color-2\",\"color-4\"],[\"color-3\",\"color-9\",\"color-9\",\"color-5\"],[\"color-2\",\"color-9\",\"color-3\",\"color-6\"],[\"color-1\",\"color-6\",\"color-7\",\"color-5\"],[\"color-4\",\"color-4\",\"color-8\",\"color-6\"],[\"color-5\",\"color-3\",\"color-6\",\"color-3\"],[\"color-7\",\"color-7\",\"color-1\",\"color-8\"],[],[]]"
+    },
+    {
+      "level": 71,
+      "seed": "watersort-campaign-v1-level-71",
+      "exactHash": "529690594c58f0e3",
+      "equivHash": "14ed1458be1ff295",
+      "exact": "[[\"color-5\",\"color-5\",\"color-6\",\"color-6\"],[\"color-4\",\"color-2\",\"color-8\",\"color-3\"],[\"color-4\",\"color-9\",\"color-4\",\"color-2\"],[\"color-9\",\"color-9\",\"color-1\",\"color-8\"],[\"color-5\",\"color-9\",\"color-4\",\"color-1\"],[\"color-1\",\"color-5\",\"color-8\",\"color-6\"],[\"color-3\",\"color-7\",\"color-3\",\"color-7\"],[\"color-2\",\"color-6\",\"color-3\",\"color-7\"],[\"color-2\",\"color-7\",\"color-8\",\"color-1\"],[],[]]"
+    },
+    {
+      "level": 72,
+      "seed": "watersort-campaign-v1-level-72",
+      "exactHash": "2829944e5e8650b1",
+      "equivHash": "d4ed2522e40290a3",
+      "exact": "[[\"color-2\",\"color-9\",\"color-5\",\"color-5\"],[\"color-6\",\"color-4\",\"color-4\",\"color-1\"],[\"color-8\",\"color-6\",\"color-5\",\"color-2\"],[\"color-6\",\"color-6\",\"color-7\",\"color-8\"],[\"color-2\",\"color-7\",\"color-1\",\"color-7\"],[\"color-1\",\"color-7\",\"color-3\",\"color-8\"],[\"color-9\",\"color-4\",\"color-4\",\"color-1\"],[\"color-8\",\"color-3\",\"color-9\",\"color-3\"],[\"color-3\",\"color-9\",\"color-5\",\"color-2\"],[],[]]"
+    },
+    {
+      "level": 73,
+      "seed": "watersort-campaign-v1-level-73",
+      "exactHash": "5757492bae708f5f",
+      "equivHash": "913428d7dcee616f",
+      "exact": "[[\"color-9\",\"color-3\",\"color-2\",\"color-3\"],[\"color-7\",\"color-8\",\"color-4\",\"color-7\"],[\"color-8\",\"color-3\",\"color-6\",\"color-4\"],[\"color-5\",\"color-4\",\"color-5\",\"color-1\"],[\"color-4\",\"color-2\",\"color-2\",\"color-8\"],[\"color-7\",\"color-9\",\"color-6\",\"color-7\"],[\"color-9\",\"color-3\",\"color-6\",\"color-1\"],[\"color-5\",\"color-6\",\"color-5\",\"color-9\"],[\"color-1\",\"color-8\",\"color-1\",\"color-2\"],[],[]]"
+    },
+    {
+      "level": 74,
+      "seed": "watersort-campaign-v1-level-74",
+      "exactHash": "aaa3405b84ec7bc2",
+      "equivHash": "e4da6660b0d48440",
+      "exact": "[[\"color-1\",\"color-4\",\"color-5\",\"color-3\"],[\"color-6\",\"color-5\",\"color-9\",\"color-7\"],[\"color-2\",\"color-9\",\"color-4\",\"color-7\"],[\"color-6\",\"color-6\",\"color-9\",\"color-5\"],[\"color-6\",\"color-9\",\"color-8\",\"color-2\"],[\"color-5\",\"color-2\",\"color-4\",\"color-1\"],[\"color-8\",\"color-1\",\"color-3\",\"color-7\"],[\"color-3\",\"color-1\",\"color-8\",\"color-7\"],[\"color-4\",\"color-3\",\"color-2\",\"color-8\"],[],[]]"
+    },
+    {
+      "level": 75,
+      "seed": "watersort-campaign-v1-level-75",
+      "exactHash": "85d0553400fdcc47",
+      "equivHash": "05af534dc6b3ceb3",
+      "exact": "[[\"color-4\",\"color-2\",\"color-4\",\"color-9\"],[\"color-5\",\"color-1\",\"color-6\",\"color-8\"],[\"color-7\",\"color-3\",\"color-1\",\"color-6\"],[\"color-3\",\"color-9\",\"color-3\",\"color-6\"],[\"color-2\",\"color-1\",\"color-4\",\"color-9\"],[\"color-5\",\"color-7\",\"color-9\",\"color-4\"],[\"color-7\",\"color-1\",\"color-8\",\"color-3\"],[\"color-5\",\"color-7\",\"color-6\",\"color-5\"],[\"color-8\",\"color-2\",\"color-2\",\"color-8\"],[],[]]"
+    },
+    {
+      "level": 76,
+      "seed": "watersort-campaign-v1-level-76",
+      "exactHash": "7b3382ef3e3c7f35",
+      "equivHash": "a4cc9d4c431bdfdc",
+      "exact": "[[\"color-7\",\"color-4\",\"color-4\",\"color-4\"],[\"color-1\",\"color-3\",\"color-3\",\"color-3\"],[\"color-6\",\"color-5\",\"color-8\",\"color-1\"],[\"color-2\",\"color-8\",\"color-4\",\"color-5\"],[\"color-9\",\"color-3\",\"color-2\",\"color-9\"],[\"color-5\",\"color-9\",\"color-7\",\"color-7\"],[\"color-6\",\"color-2\",\"color-8\",\"color-7\"],[\"color-1\",\"color-6\",\"color-5\",\"color-9\"],[\"color-1\",\"color-2\",\"color-8\",\"color-6\"],[],[]]"
+    },
+    {
+      "level": 77,
+      "seed": "watersort-campaign-v1-level-77",
+      "exactHash": "fcacb8db36aaa170",
+      "equivHash": "68f9281bedbf0f8d",
+      "exact": "[[\"color-8\",\"color-6\",\"color-6\",\"color-1\"],[\"color-1\",\"color-1\",\"color-4\",\"color-7\"],[\"color-3\",\"color-5\",\"color-4\",\"color-9\"],[\"color-1\",\"color-3\",\"color-8\",\"color-7\"],[\"color-5\",\"color-3\",\"color-5\",\"color-7\"],[\"color-9\",\"color-5\",\"color-6\",\"color-9\"],[\"color-2\",\"color-4\",\"color-2\",\"color-2\"],[\"color-6\",\"color-8\",\"color-4\",\"color-8\"],[\"color-9\",\"color-2\",\"color-7\",\"color-3\"],[],[]]"
+    },
+    {
+      "level": 78,
+      "seed": "watersort-campaign-v1-level-78",
+      "exactHash": "922a356ae73ebbd1",
+      "equivHash": "3e8677af293b6ad1",
+      "exact": "[[\"color-6\",\"color-7\",\"color-8\",\"color-7\"],[\"color-8\",\"color-5\",\"color-6\",\"color-8\"],[\"color-3\",\"color-6\",\"color-1\",\"color-2\"],[\"color-4\",\"color-9\",\"color-7\",\"color-2\"],[\"color-9\",\"color-5\",\"color-5\",\"color-3\"],[\"color-5\",\"color-1\",\"color-4\",\"color-1\"],[\"color-6\",\"color-9\",\"color-9\",\"color-3\"],[\"color-4\",\"color-1\",\"color-3\",\"color-2\"],[\"color-8\",\"color-4\",\"color-7\",\"color-2\"],[],[]]"
+    },
+    {
+      "level": 79,
+      "seed": "watersort-campaign-v1-level-79",
+      "exactHash": "ab18e5034b414d6c",
+      "equivHash": "274cc9f29225723d",
+      "exact": "[[\"color-4\",\"color-6\",\"color-5\",\"color-4\"],[\"color-3\",\"color-5\",\"color-4\",\"color-6\"],[\"color-8\",\"color-2\",\"color-7\",\"color-2\"],[\"color-3\",\"color-1\",\"color-4\",\"color-8\"],[\"color-9\",\"color-5\",\"color-7\",\"color-1\"],[\"color-1\",\"color-6\",\"color-3\",\"color-3\"],[\"color-9\",\"color-7\",\"color-2\",\"color-9\"],[\"color-6\",\"color-8\",\"color-8\",\"color-5\"],[\"color-2\",\"color-1\",\"color-7\",\"color-9\"],[],[]]"
+    },
+    {
+      "level": 80,
+      "seed": "watersort-campaign-v1-level-80",
+      "exactHash": "02e0e3cdf460f57b",
+      "equivHash": "04e07c6013a21a66",
+      "exact": "[[\"color-8\",\"color-3\",\"color-5\",\"color-3\"],[\"color-6\",\"color-6\",\"color-1\",\"color-5\"],[\"color-7\",\"color-9\",\"color-2\",\"color-2\"],[\"color-7\",\"color-4\",\"color-4\",\"color-3\"],[\"color-6\",\"color-4\",\"color-1\",\"color-8\"],[\"color-2\",\"color-3\",\"color-9\",\"color-1\"],[\"color-1\",\"color-7\",\"color-4\",\"color-8\"],[\"color-5\",\"color-9\",\"color-7\",\"color-6\"],[\"color-9\",\"color-8\",\"color-2\",\"color-5\"],[],[]]"
+    },
+    {
+      "level": 81,
+      "seed": "watersort-campaign-v1-level-81",
+      "exactHash": "461d5096018ff17e",
+      "equivHash": "06911b78d71d40ae",
+      "exact": "[[\"color-6\",\"color-9\",\"color-3\",\"color-4\"],[\"color-7\",\"color-10\",\"color-7\",\"color-2\"],[\"color-8\",\"color-10\",\"color-9\",\"color-6\"],[\"color-5\",\"color-1\",\"color-4\",\"color-3\"],[\"color-2\",\"color-7\",\"color-5\",\"color-1\"],[\"color-6\",\"color-5\",\"color-9\",\"color-2\"],[\"color-10\",\"color-3\",\"color-4\",\"color-6\"],[\"color-4\",\"color-8\",\"color-3\",\"color-7\"],[\"color-10\",\"color-1\",\"color-1\",\"color-8\"],[\"color-2\",\"color-5\",\"color-9\",\"color-8\"],[],[]]"
+    },
+    {
+      "level": 82,
+      "seed": "watersort-campaign-v1-level-82",
+      "exactHash": "07de03f746019593",
+      "equivHash": "01823f71450dc1cc",
+      "exact": "[[\"color-1\",\"color-5\",\"color-3\",\"color-4\"],[\"color-8\",\"color-3\",\"color-3\",\"color-10\"],[\"color-7\",\"color-10\",\"color-9\",\"color-6\"],[\"color-7\",\"color-9\",\"color-1\",\"color-5\"],[\"color-8\",\"color-5\",\"color-2\",\"color-10\"],[\"color-9\",\"color-8\",\"color-6\",\"color-4\"],[\"color-8\",\"color-1\",\"color-2\",\"color-1\"],[\"color-6\",\"color-7\",\"color-2\",\"color-4\"],[\"color-10\",\"color-3\",\"color-6\",\"color-9\"],[\"color-2\",\"color-4\",\"color-5\",\"color-7\"],[],[]]"
+    },
+    {
+      "level": 83,
+      "seed": "watersort-campaign-v1-level-83",
+      "exactHash": "269f7332b80c77eb",
+      "equivHash": "f521c6b5658e84ec",
+      "exact": "[[\"color-8\",\"color-2\",\"color-3\",\"color-10\"],[\"color-10\",\"color-6\",\"color-3\",\"color-5\"],[\"color-2\",\"color-7\",\"color-8\",\"color-6\"],[\"color-5\",\"color-4\",\"color-9\",\"color-8\"],[\"color-7\",\"color-9\",\"color-6\",\"color-6\"],[\"color-4\",\"color-10\",\"color-5\",\"color-1\"],[\"color-4\",\"color-1\",\"color-5\",\"color-7\"],[\"color-2\",\"color-9\",\"color-1\",\"color-1\"],[\"color-3\",\"color-7\",\"color-3\",\"color-8\"],[\"color-10\",\"color-9\",\"color-4\",\"color-2\"],[],[]]"
+    },
+    {
+      "level": 84,
+      "seed": "watersort-campaign-v1-level-84",
+      "exactHash": "d6cdd71ae4fe95a3",
+      "equivHash": "fb666ff31870d3b8",
+      "exact": "[[\"color-4\",\"color-8\",\"color-5\",\"color-10\"],[\"color-4\",\"color-8\",\"color-9\",\"color-1\"],[\"color-10\",\"color-4\",\"color-10\",\"color-4\"],[\"color-5\",\"color-1\",\"color-7\",\"color-5\"],[\"color-9\",\"color-1\",\"color-10\",\"color-2\"],[\"color-2\",\"color-6\",\"color-6\",\"color-6\"],[\"color-3\",\"color-8\",\"color-5\",\"color-9\"],[\"color-3\",\"color-7\",\"color-9\",\"color-2\"],[\"color-2\",\"color-8\",\"color-7\",\"color-1\"],[\"color-6\",\"color-3\",\"color-3\",\"color-7\"],[],[]]"
+    },
+    {
+      "level": 85,
+      "seed": "watersort-campaign-v1-level-85",
+      "exactHash": "4ba7932c20cb3bcc",
+      "equivHash": "196dc1955e7dc574",
+      "exact": "[[\"color-8\",\"color-3\",\"color-8\",\"color-6\"],[\"color-4\",\"color-10\",\"color-2\",\"color-2\"],[\"color-6\",\"color-5\",\"color-9\",\"color-8\"],[\"color-5\",\"color-1\",\"color-8\",\"color-10\"],[\"color-1\",\"color-4\",\"color-3\",\"color-4\"],[\"color-4\",\"color-6\",\"color-9\",\"color-2\"],[\"color-3\",\"color-6\",\"color-7\",\"color-9\"],[\"color-3\",\"color-5\",\"color-10\",\"color-10\"],[\"color-1\",\"color-1\",\"color-5\",\"color-2\"],[\"color-7\",\"color-7\",\"color-7\",\"color-9\"],[],[]]"
+    },
+    {
+      "level": 86,
+      "seed": "watersort-campaign-v1-level-86",
+      "exactHash": "336d83a675946238",
+      "equivHash": "05fdbeef7d7c17f9",
+      "exact": "[[\"color-10\",\"color-5\",\"color-6\",\"color-8\"],[\"color-9\",\"color-10\",\"color-4\",\"color-5\"],[\"color-4\",\"color-3\",\"color-10\",\"color-2\"],[\"color-9\",\"color-3\",\"color-4\",\"color-6\"],[\"color-8\",\"color-2\",\"color-5\",\"color-7\"],[\"color-7\",\"color-10\",\"color-6\",\"color-1\"],[\"color-8\",\"color-6\",\"color-8\",\"color-4\"],[\"color-1\",\"color-1\",\"color-3\",\"color-2\"],[\"color-5\",\"color-2\",\"color-7\",\"color-3\"],[\"color-9\",\"color-7\",\"color-1\",\"color-9\"],[],[]]"
+    },
+    {
+      "level": 87,
+      "seed": "watersort-campaign-v1-level-87",
+      "exactHash": "efc372bf20d56535",
+      "equivHash": "3495489afeacc53b",
+      "exact": "[[\"color-2\",\"color-8\",\"color-3\",\"color-5\"],[\"color-8\",\"color-9\",\"color-9\",\"color-1\"],[\"color-5\",\"color-9\",\"color-5\",\"color-6\"],[\"color-2\",\"color-10\",\"color-7\",\"color-3\"],[\"color-2\",\"color-8\",\"color-6\",\"color-9\"],[\"color-10\",\"color-2\",\"color-1\",\"color-4\"],[\"color-7\",\"color-10\",\"color-1\",\"color-7\"],[\"color-3\",\"color-1\",\"color-6\",\"color-7\"],[\"color-6\",\"color-8\",\"color-4\",\"color-5\"],[\"color-4\",\"color-3\",\"color-4\",\"color-10\"],[],[]]"
+    },
+    {
+      "level": 88,
+      "seed": "watersort-campaign-v1-level-88",
+      "exactHash": "e529ba8935ed8a27",
+      "equivHash": "7b8e2babb5ae65a4",
+      "exact": "[[\"color-4\",\"color-5\",\"color-10\",\"color-2\"],[\"color-7\",\"color-7\",\"color-2\",\"color-9\"],[\"color-6\",\"color-9\",\"color-3\",\"color-7\"],[\"color-5\",\"color-10\",\"color-3\",\"color-8\"],[\"color-6\",\"color-8\",\"color-8\",\"color-1\"],[\"color-1\",\"color-8\",\"color-5\",\"color-10\"],[\"color-1\",\"color-9\",\"color-7\",\"color-4\"],[\"color-6\",\"color-4\",\"color-1\",\"color-5\"],[\"color-6\",\"color-3\",\"color-3\",\"color-2\"],[\"color-10\",\"color-4\",\"color-2\",\"color-9\"],[],[]]"
+    },
+    {
+      "level": 89,
+      "seed": "watersort-campaign-v1-level-89",
+      "exactHash": "8630cc00f28f5205",
+      "equivHash": "885a54a4421c25ca",
+      "exact": "[[\"color-4\",\"color-2\",\"color-9\",\"color-5\"],[\"color-8\",\"color-5\",\"color-6\",\"color-5\"],[\"color-6\",\"color-3\",\"color-6\",\"color-7\"],[\"color-10\",\"color-2\",\"color-1\",\"color-1\"],[\"color-3\",\"color-9\",\"color-10\",\"color-2\"],[\"color-4\",\"color-5\",\"color-8\",\"color-6\"],[\"color-9\",\"color-4\",\"color-9\",\"color-3\"],[\"color-10\",\"color-3\",\"color-7\",\"color-7\"],[\"color-2\",\"color-4\",\"color-8\",\"color-10\"],[\"color-1\",\"color-8\",\"color-1\",\"color-7\"],[],[]]"
+    },
+    {
+      "level": 90,
+      "seed": "watersort-campaign-v1-level-90",
+      "exactHash": "b2a1bc5bdd989b2f",
+      "equivHash": "544783d201e6cab5",
+      "exact": "[[\"color-1\",\"color-1\",\"color-3\",\"color-6\"],[\"color-9\",\"color-10\",\"color-10\",\"color-7\"],[\"color-2\",\"color-6\",\"color-7\",\"color-9\"],[\"color-8\",\"color-7\",\"color-5\",\"color-5\"],[\"color-2\",\"color-4\",\"color-3\",\"color-5\"],[\"color-8\",\"color-6\",\"color-9\",\"color-10\"],[\"color-9\",\"color-2\",\"color-10\",\"color-3\"],[\"color-4\",\"color-7\",\"color-8\",\"color-6\"],[\"color-2\",\"color-1\",\"color-8\",\"color-3\"],[\"color-4\",\"color-5\",\"color-4\",\"color-1\"],[],[]]"
+    },
+    {
+      "level": 91,
+      "seed": "watersort-campaign-v1-level-91",
+      "exactHash": "b6eb4819c133aba8",
+      "equivHash": "1cff913aedea5bd1",
+      "exact": "[[\"color-9\",\"color-8\",\"color-1\",\"color-5\"],[\"color-4\",\"color-1\",\"color-3\",\"color-2\"],[\"color-6\",\"color-9\",\"color-7\",\"color-3\"],[\"color-9\",\"color-8\",\"color-5\",\"color-2\"],[\"color-6\",\"color-7\",\"color-8\",\"color-5\"],[\"color-7\",\"color-10\",\"color-5\",\"color-11\"],[\"color-6\",\"color-10\",\"color-6\",\"color-4\"],[\"color-11\",\"color-2\",\"color-7\",\"color-11\"],[\"color-4\",\"color-3\",\"color-8\",\"color-2\"],[\"color-10\",\"color-4\",\"color-10\",\"color-1\"],[\"color-3\",\"color-1\",\"color-9\",\"color-11\"],[],[]]"
+    },
+    {
+      "level": 92,
+      "seed": "watersort-campaign-v1-level-92",
+      "exactHash": "00a14613d37c3d82",
+      "equivHash": "4d5c1ef4099edabd",
+      "exact": "[[\"color-5\",\"color-9\",\"color-11\",\"color-7\"],[\"color-10\",\"color-10\",\"color-8\",\"color-7\"],[\"color-4\",\"color-2\",\"color-9\",\"color-2\"],[\"color-2\",\"color-9\",\"color-1\",\"color-1\"],[\"color-6\",\"color-4\",\"color-5\",\"color-6\"],[\"color-3\",\"color-8\",\"color-1\",\"color-8\"],[\"color-5\",\"color-11\",\"color-1\",\"color-5\"],[\"color-6\",\"color-7\",\"color-6\",\"color-8\"],[\"color-7\",\"color-4\",\"color-11\",\"color-3\"],[\"color-11\",\"color-4\",\"color-2\",\"color-3\"],[\"color-10\",\"color-10\",\"color-3\",\"color-9\"],[],[]]"
+    },
+    {
+      "level": 93,
+      "seed": "watersort-campaign-v1-level-93",
+      "exactHash": "67f84345a30e72e5",
+      "equivHash": "1ed43c72530ab5f4",
+      "exact": "[[\"color-1\",\"color-11\",\"color-6\",\"color-7\"],[\"color-1\",\"color-4\",\"color-10\",\"color-2\"],[\"color-1\",\"color-2\",\"color-11\",\"color-3\"],[\"color-5\",\"color-8\",\"color-9\",\"color-3\"],[\"color-9\",\"color-10\",\"color-11\",\"color-8\"],[\"color-1\",\"color-6\",\"color-7\",\"color-6\"],[\"color-10\",\"color-9\",\"color-2\",\"color-5\"],[\"color-4\",\"color-10\",\"color-9\",\"color-2\"],[\"color-6\",\"color-4\",\"color-8\",\"color-5\"],[\"color-7\",\"color-11\",\"color-3\",\"color-8\"],[\"color-7\",\"color-3\",\"color-5\",\"color-4\"],[],[]]"
+    },
+    {
+      "level": 94,
+      "seed": "watersort-campaign-v1-level-94",
+      "exactHash": "41bab499c4732c9d",
+      "equivHash": "40860218e4d4ee6f",
+      "exact": "[[\"color-1\",\"color-5\",\"color-1\",\"color-6\"],[\"color-3\",\"color-6\",\"color-2\",\"color-11\"],[\"color-1\",\"color-8\",\"color-9\",\"color-3\"],[\"color-4\",\"color-5\",\"color-11\",\"color-8\"],[\"color-6\",\"color-5\",\"color-10\",\"color-5\"],[\"color-11\",\"color-4\",\"color-9\",\"color-9\"],[\"color-10\",\"color-4\",\"color-7\",\"color-10\"],[\"color-3\",\"color-4\",\"color-7\",\"color-2\"],[\"color-6\",\"color-11\",\"color-1\",\"color-7\"],[\"color-9\",\"color-8\",\"color-7\",\"color-10\"],[\"color-2\",\"color-2\",\"color-8\",\"color-3\"],[],[]]"
+    },
+    {
+      "level": 95,
+      "seed": "watersort-campaign-v1-level-95",
+      "exactHash": "7590f9a483fb5b1c",
+      "equivHash": "c60c76cd7dc4945a",
+      "exact": "[[\"color-7\",\"color-2\",\"color-9\",\"color-5\"],[\"color-10\",\"color-4\",\"color-8\",\"color-2\"],[\"color-3\",\"color-2\",\"color-5\",\"color-1\"],[\"color-5\",\"color-8\",\"color-6\",\"color-4\"],[\"color-1\",\"color-3\",\"color-11\",\"color-9\"],[\"color-4\",\"color-7\",\"color-3\",\"color-6\"],[\"color-1\",\"color-8\",\"color-7\",\"color-6\"],[\"color-11\",\"color-7\",\"color-5\",\"color-10\"],[\"color-6\",\"color-10\",\"color-11\",\"color-2\"],[\"color-11\",\"color-9\",\"color-8\",\"color-9\"],[\"color-4\",\"color-1\",\"color-3\",\"color-10\"],[],[]]"
+    },
+    {
+      "level": 96,
+      "seed": "watersort-campaign-v1-level-96",
+      "exactHash": "07cdcf1cb4940aa6",
+      "equivHash": "a59644c120d074c7",
+      "exact": "[[\"color-7\",\"color-8\",\"color-3\",\"color-10\"],[\"color-7\",\"color-11\",\"color-6\",\"color-4\"],[\"color-2\",\"color-11\",\"color-10\",\"color-9\"],[\"color-11\",\"color-1\",\"color-5\",\"color-2\"],[\"color-4\",\"color-8\",\"color-10\",\"color-5\"],[\"color-7\",\"color-2\",\"color-11\",\"color-9\"],[\"color-2\",\"color-8\",\"color-7\",\"color-6\"],[\"color-8\",\"color-1\",\"color-3\",\"color-9\"],[\"color-5\",\"color-6\",\"color-3\",\"color-4\"],[\"color-10\",\"color-6\",\"color-1\",\"color-4\"],[\"color-5\",\"color-1\",\"color-3\",\"color-9\"],[],[]]"
+    },
+    {
+      "level": 97,
+      "seed": "watersort-campaign-v1-level-97",
+      "exactHash": "c797e6f7b286a30d",
+      "equivHash": "54a3dbf42ba64420",
+      "exact": "[[\"color-8\",\"color-1\",\"color-7\",\"color-6\"],[\"color-11\",\"color-9\",\"color-10\",\"color-2\"],[\"color-4\",\"color-3\",\"color-8\",\"color-9\"],[\"color-11\",\"color-2\",\"color-7\",\"color-7\"],[\"color-2\",\"color-1\",\"color-9\",\"color-1\"],[\"color-10\",\"color-4\",\"color-5\",\"color-4\"],[\"color-9\",\"color-1\",\"color-4\",\"color-5\"],[\"color-5\",\"color-7\",\"color-11\",\"color-10\"],[\"color-3\",\"color-10\",\"color-5\",\"color-6\"],[\"color-3\",\"color-6\",\"color-6\",\"color-8\"],[\"color-11\",\"color-8\",\"color-2\",\"color-3\"],[],[]]"
+    },
+    {
+      "level": 98,
+      "seed": "watersort-campaign-v1-level-98",
+      "exactHash": "dfe2339ce57c0576",
+      "equivHash": "da739136f58fb72a",
+      "exact": "[[\"color-9\",\"color-2\",\"color-3\",\"color-7\"],[\"color-1\",\"color-6\",\"color-7\",\"color-11\"],[\"color-4\",\"color-5\",\"color-4\",\"color-10\"],[\"color-6\",\"color-8\",\"color-10\",\"color-11\"],[\"color-5\",\"color-6\",\"color-1\",\"color-11\"],[\"color-3\",\"color-9\",\"color-8\",\"color-10\"],[\"color-9\",\"color-6\",\"color-1\",\"color-4\"],[\"color-1\",\"color-8\",\"color-4\",\"color-8\"],[\"color-9\",\"color-11\",\"color-7\",\"color-2\"],[\"color-10\",\"color-2\",\"color-3\",\"color-5\"],[\"color-7\",\"color-5\",\"color-3\",\"color-2\"],[],[]]"
+    },
+    {
+      "level": 99,
+      "seed": "watersort-campaign-v1-level-99",
+      "exactHash": "5c3a201449b5a924",
+      "equivHash": "a2eda69436c8a18b",
+      "exact": "[[\"color-4\",\"color-1\",\"color-1\",\"color-7\"],[\"color-10\",\"color-6\",\"color-7\",\"color-9\"],[\"color-4\",\"color-3\",\"color-11\",\"color-9\"],[\"color-3\",\"color-11\",\"color-5\",\"color-2\"],[\"color-4\",\"color-2\",\"color-8\",\"color-10\"],[\"color-5\",\"color-6\",\"color-5\",\"color-7\"],[\"color-7\",\"color-11\",\"color-6\",\"color-3\"],[\"color-4\",\"color-9\",\"color-10\",\"color-3\"],[\"color-8\",\"color-9\",\"color-1\",\"color-8\"],[\"color-6\",\"color-5\",\"color-11\",\"color-1\"],[\"color-8\",\"color-2\",\"color-10\",\"color-2\"],[],[]]"
+    },
+    {
+      "level": 100,
+      "seed": "watersort-campaign-v1-level-100",
+      "exactHash": "f9c9643c039177a1",
+      "equivHash": "a9263f44f84e3a7b",
+      "exact": "[[\"color-2\",\"color-9\",\"color-10\",\"color-6\"],[\"color-10\",\"color-11\",\"color-1\",\"color-7\"],[\"color-10\",\"color-4\",\"color-3\",\"color-5\"],[\"color-6\",\"color-9\",\"color-5\",\"color-4\"],[\"color-7\",\"color-10\",\"color-7\",\"color-11\"],[\"color-4\",\"color-9\",\"color-8\",\"color-6\"],[\"color-1\",\"color-8\",\"color-8\",\"color-1\"],[\"color-3\",\"color-3\",\"color-11\",\"color-4\"],[\"color-9\",\"color-3\",\"color-5\",\"color-2\"],[\"color-11\",\"color-2\",\"color-5\",\"color-1\"],[\"color-2\",\"color-6\",\"color-7\",\"color-8\"],[],[]]"
+    }
+  ]
+}

@@ -17,6 +17,7 @@ import { TrainingHint } from '../components/TrainingHint'
 import { TubeBoard } from '../components/TubeBoard'
 import { WinModal } from '../components/WinModal'
 import { useSharedCampaignGame } from '../hooks/CampaignGameContext'
+import { CAMPAIGN_LEVEL_COUNT } from '../campaign'
 import { uiColors } from '../theme'
 
 interface GameScreenProps {
@@ -136,14 +137,14 @@ export function GameScreen({ onOpenHome, onOpenLevels, onOpenSettings }: GameScr
 				levelNumber={game.levelNumber}
 				moveCount={game.moveCount}
 				difficultyLabel={game.difficultyLabel}
-				isFinalCampaignLevel={game.levelNumber >= 100}
+				isFinalCampaignLevel={game.levelNumber >= CAMPAIGN_LEVEL_COUNT}
 				onNext={game.handleNextLevel}
 				onReplay={game.handleReplayLevel}
 			/>
 
 			{game.showCampaignFinished ? (
 				<View style={styles.campaignDone} testID="campaign-finished">
-					<Text style={styles.campaignDoneTitle}>Первые 100 уровней пройдены</Text>
+					<Text style={styles.campaignDoneTitle}>1000 уровней пройдено!</Text>
 					<Text style={styles.campaignDoneBody}>
 						Можно переигрывать уровни из меню «Уровни».
 					</Text>

@@ -1,4 +1,18 @@
-export { CAMPAIGN_LEVEL_COUNT, CAMPAIGN_SEED_PREFIX, getCampaignColorCount, getCampaignDifficultyBand, getCampaignLevelConfig, getDifficultyLabelRu, isLevelCompleted, isLevelUnlocked, nextUnlockAfterClearing } from './config'
+export {
+	CAMPAIGN_LEVEL_COUNT,
+	CAMPAIGN_SEED_PREFIX,
+	ORIGINAL_CAMPAIGN_MILESTONE,
+	CAMPAIGN_MAX_COLORS,
+	CAMPAIGN_EMPTY_TUBE_COUNT,
+	getCampaignColorCount,
+	getCampaignDifficultyBand,
+	getCampaignLevelConfig,
+	getDifficultyLabelRu,
+	isLevelCompleted,
+	isLevelUnlocked,
+	nextUnlockAfterClearing,
+} from './config'
+
 export type { CampaignDifficultyBand, CampaignLevelConfig } from './config'
 export { createCampaignLevel, createLevel } from './createLevel'
 export type { CampaignLevel } from './createLevel'

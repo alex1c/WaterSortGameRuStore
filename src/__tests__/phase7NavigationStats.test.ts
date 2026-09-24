@@ -153,8 +153,8 @@ describe('Phase 7 statistics', () => {
 })
 
 describe('Phase 7 achievements', () => {
-	it('defines 15 deterministic achievements', () => {
-		expect(ACHIEVEMENT_DEFINITIONS).toHaveLength(15)
+	it('defines 18 deterministic achievements', () => {
+		expect(ACHIEVEMENT_DEFINITIONS).toHaveLength(18)
 	})
 
 	it('unlocks progression thresholds from completed levels', () => {

@@ -71,8 +71,9 @@ describe('campaign unlock rules', () => {
 		expect(isLevelCompleted(2, 2)).toBe(false)
 		expect(isLevelCompleted(100, 100, true)).toBe(true)
 		expect(nextUnlockAfterClearing(1, 1)).toBe(2)
-		expect(nextUnlockAfterClearing(100, 100)).toBe(100)
-		expect(CAMPAIGN_LEVEL_COUNT).toBe(100)
+		expect(nextUnlockAfterClearing(100, 100)).toBe(101)
+		expect(nextUnlockAfterClearing(1000, 1000)).toBe(1000)
+		expect(CAMPAIGN_LEVEL_COUNT).toBe(1000)
 	})
 })
 

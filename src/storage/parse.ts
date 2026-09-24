@@ -1,6 +1,9 @@
 import type { Board } from '../game/types'
 import { isValidBoard } from '../game/core'
-import { CAMPAIGN_LEVEL_COUNT } from '../campaign/config'
+import {
+	CAMPAIGN_LEVEL_COUNT,
+	ORIGINAL_CAMPAIGN_MILESTONE,
+} from '../campaign/config'
 import { parseGameSettings } from '../settings/parse'
 import {
 	parseAttemptFlags,
@@ -21,12 +24,12 @@ import {
 
 /**
  * Pure parser used by tests and the async loader.
- * Accepts schema v1/v2/v3. Never throws.
+ * Accepts schema v1–v4. Never throws.
  *
- * Migration notes:
- * - Campaign unlocks / session / settings are preserved.
- * - Progression statistics & reconstructible achievements are derived from
- *   highestUnlockedLevel / campaignComplete when richer history is absent.
+ * Migration notes (v3 → v4):
+ * - If old `campaignComplete=true` (meaning Levels 1–100 done), clear the
+ *   flag for the 1000-level campaign and unlock Level 101.
+ * - Campaign unlocks / session / settings / stats / achievements preserved.
  * - Historical pours / hint / undo / restart counts are NOT invented.
  */
 export function parsePersistedGameState(raw: string): PersistedGameState {
@@ -47,16 +50,29 @@ export function parsePersistedGameState(raw: string): PersistedGameState {
 			return fallback
 		}
 
-		const currentLevel = asLevelNumber(record.currentLevel) ?? 1
-		const highestUnlockedLevel = clamp(
+		const incomingSchema =
+			typeof schemaVersion === 'number' ? schemaVersion : 0
+
+		let currentLevel = asLevelNumber(record.currentLevel) ?? 1
+		let highestUnlockedLevel = clamp(
 			asLevelNumber(record.highestUnlockedLevel) ?? 1,
 			1,
 			CAMPAIGN_LEVEL_COUNT,
 		)
-		const campaignComplete = record.campaignComplete === true
+		let campaignComplete = record.campaignComplete === true
 		const tutorialCompleted = record.tutorialCompleted === true
 		const session = parseSession(record.session)
 		const settings = parseGameSettings(record.settings)
+
+		// v3 (and earlier) campaignComplete meant the 100-level milestone.
+		if (incomingSchema <= 3 && campaignComplete) {
+			campaignComplete = false
+			highestUnlockedLevel = Math.max(
+				highestUnlockedLevel,
+				ORIGINAL_CAMPAIGN_MILESTONE + 1,
+			)
+			if (currentLevel < 1) currentLevel = 1
+		}
 
 		const parsedStats = parseGameStatistics(record.statistics)
 		const statistics = reconstructStatisticsFromProgress(

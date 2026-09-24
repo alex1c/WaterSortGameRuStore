@@ -13,6 +13,7 @@ export {
 	cloneBoard,
 	isCompleteTube,
 	isValidBoard,
+	countColors,
 	moveChangesBoard,
 } from './core'
 export { getHint, solve } from './solver'

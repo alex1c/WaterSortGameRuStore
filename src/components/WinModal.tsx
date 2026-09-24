@@ -68,7 +68,7 @@ export function WinModal({
 					<Text style={styles.meta}>Ходов: {moveCount}</Text>
 					<Text style={styles.meta}>Сложность: {difficultyLabel}</Text>
 					{isFinalCampaignLevel ? (
-						<Text style={styles.finalNote}>Первые 100 уровней пройдены</Text>
+						<Text style={styles.finalNote}>1000 уровней пройдено!</Text>
 					) : null}
 
 					<Pressable

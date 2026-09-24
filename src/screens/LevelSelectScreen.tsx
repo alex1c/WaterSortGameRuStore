@@ -1,3 +1,4 @@
+import { useMemo, useState } from 'react'
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
@@ -9,6 +10,9 @@ import {
 import { spacing, uiColors } from '../theme'
 import { BannerSlot } from '../components/BannerSlot'
 
+/** Temporary PH8A page size — full virtualized selector is PH8B. */
+const LEVEL_PAGE_SIZE = 100
+
 interface LevelSelectScreenProps {
 	currentLevel: number
 	highestUnlockedLevel: number
@@ -18,7 +22,9 @@ interface LevelSelectScreenProps {
 }
 
 /**
- * Compact 1–100 campaign grid with clearer completed / current / locked states.
+ * Minimal compatibility selector for the 1000-level campaign.
+ * Renders one 100-level page at a time to avoid mounting 1000 cells.
+ * Proper virtualization / range UX is deferred to PH8B.
  */
 export function LevelSelectScreen({
 	currentLevel,
@@ -28,7 +34,25 @@ export function LevelSelectScreen({
 	onClose,
 }: LevelSelectScreenProps) {
 	const insets = useSafeAreaInsets()
-	const levels = Array.from({ length: CAMPAIGN_LEVEL_COUNT }, (_, i) => i + 1)
+	const pageCount = Math.ceil(CAMPAIGN_LEVEL_COUNT / LEVEL_PAGE_SIZE)
+	const initialPage = Math.min(
+		pageCount - 1,
+		Math.max(0, Math.floor((currentLevel - 1) / LEVEL_PAGE_SIZE)),
+	)
+	const [pageIndex, setPageIndex] = useState(initialPage)
+
+	const { start, end, levels } = useMemo(() => {
+		const pageStart = pageIndex * LEVEL_PAGE_SIZE + 1
+		const pageEnd = Math.min(CAMPAIGN_LEVEL_COUNT, pageStart + LEVEL_PAGE_SIZE - 1)
+		return {
+			start: pageStart,
+			end: pageEnd,
+			levels: Array.from(
+				{ length: pageEnd - pageStart + 1 },
+				(_, i) => pageStart + i,
+			),
+		}
+	}, [pageIndex])
 
 	return (
 		<View
@@ -54,9 +78,41 @@ export function LevelSelectScreen({
 				</Pressable>
 			</View>
 			<Text style={styles.subtitle}>
-				Открыто до {highestUnlockedLevel}
+				Открыто до {highestUnlockedLevel} · {start}–{end} / {CAMPAIGN_LEVEL_COUNT}
 				{campaignComplete ? ' · Кампания пройдена' : ''}
 			</Text>
+
+			<View style={styles.pageRow}>
+				<Pressable
+					accessibilityRole="button"
+					disabled={pageIndex <= 0}
+					onPress={() => setPageIndex((value) => Math.max(0, value - 1))}
+					style={({ pressed }) => [
+						styles.pageButton,
+						pageIndex <= 0 && styles.pageButtonDisabled,
+						pressed && pageIndex > 0 && styles.pressed,
+					]}
+				>
+					<Text style={styles.pageButtonLabel}>←</Text>
+				</Pressable>
+				<Text style={styles.pageLabel}>
+					{pageIndex + 1} / {pageCount}
+				</Text>
+				<Pressable
+					accessibilityRole="button"
+					disabled={pageIndex >= pageCount - 1}
+					onPress={() =>
+						setPageIndex((value) => Math.min(pageCount - 1, value + 1))
+					}
+					style={({ pressed }) => [
+						styles.pageButton,
+						pageIndex >= pageCount - 1 && styles.pageButtonDisabled,
+						pressed && pageIndex < pageCount - 1 && styles.pressed,
+					]}
+				>
+					<Text style={styles.pageButtonLabel}>→</Text>
+				</Pressable>
+			</View>
 
 			<View style={styles.legend}>
 				<LegendDot color={uiColors.completed} label="Пройден" />
@@ -165,6 +221,39 @@ const styles = StyleSheet.create({
 		marginTop: 4,
 		fontSize: 13,
 		color: uiColors.textSecondary,
+	},
+	pageRow: {
+		flexDirection: 'row',
+		alignItems: 'center',
+		justifyContent: 'center',
+		gap: spacing.md,
+		paddingHorizontal: spacing.lg,
+		paddingBottom: spacing.sm,
+	},
+	pageButton: {
+		minHeight: 40,
+		minWidth: 44,
+		borderRadius: 10,
+		borderWidth: 1,
+		borderColor: uiColors.controlBorder,
+		backgroundColor: uiColors.controlBackground,
+		alignItems: 'center',
+		justifyContent: 'center',
+	},
+	pageButtonDisabled: {
+		opacity: 0.4,
+	},
+	pageButtonLabel: {
+		fontSize: 16,
+		fontWeight: '700',
+		color: uiColors.textPrimary,
+	},
+	pageLabel: {
+		fontSize: 13,
+		fontWeight: '600',
+		color: uiColors.textSecondary,
+		minWidth: 56,
+		textAlign: 'center',
 	},
 	legend: {
 		flexDirection: 'row',

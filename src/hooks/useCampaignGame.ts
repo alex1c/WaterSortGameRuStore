@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 
 import {
+	CAMPAIGN_LEVEL_COUNT,
 	createCampaignLevel,
 	getDifficultyLabelRu,
 	nextUnlockAfterClearing,
@@ -507,8 +508,10 @@ export function useCampaignGame(): CampaignGameController {
 					setTutorialCompleted(true)
 					setTrainingStep('done')
 				}
-				if (levelNumber === 100) {
-					trackEvent('campaign_completed', { level_number: 100 })
+				if (levelNumber === CAMPAIGN_LEVEL_COUNT) {
+					trackEvent('campaign_completed', {
+						level_number: CAMPAIGN_LEVEL_COUNT,
+					})
 					campaignCompleteRef.current = true
 					setCampaignComplete(true)
 				}
@@ -641,14 +644,14 @@ export function useCampaignGame(): CampaignGameController {
 		if (
 			isLevelSolved &&
 			levelNumber < highestUnlockedRef.current &&
-			levelNumber < 100
+			levelNumber < CAMPAIGN_LEVEL_COUNT
 		) {
 			openLevel(levelNumber + 1)
 		}
 	}, [isLevelSolved, levelNumber, openLevel])
 
 	const handleNextLevel = useCallback(() => {
-		if (levelNumber >= 100) {
+		if (levelNumber >= CAMPAIGN_LEVEL_COUNT) {
 			setShowCampaignFinished(true)
 			return
 		}

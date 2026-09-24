@@ -5,6 +5,7 @@
     "noImplicitOverride": true,
     "noUncheckedIndexedAccess": true,
     "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
     "types": [
       "jest"
     ]

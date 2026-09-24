@@ -1,4 +1,5 @@
 import {
+	CAMPAIGN_LEVEL_COUNT,
 	getCampaignDifficultyBand,
 	type CampaignDifficultyBand,
 } from '../campaign/config'
@@ -190,7 +191,7 @@ function asLevelNumberList(value: unknown): number[] {
 	if (!Array.isArray(value)) return []
 	const numbers = value
 		.filter((item): item is number => typeof item === 'number' && Number.isInteger(item))
-		.filter((item) => item >= 1 && item <= 100)
+		.filter((item) => item >= 1 && item <= CAMPAIGN_LEVEL_COUNT)
 	return unionSorted(numbers, [])
 }
 

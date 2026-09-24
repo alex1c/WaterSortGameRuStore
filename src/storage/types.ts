@@ -15,12 +15,13 @@ import {
 } from '../achievements'
 
 /**
- * Schema v3 adds statistics + achievements.
- * v1/v2 campaign progress migrates safely without wiping unlocks.
+ * Schema v4: campaign extended to 1000 levels.
+ * v3 `campaignComplete=true` meant the old 100-level milestone — must NOT
+ * mean all 1000 levels are done after upgrade.
  */
-export const STORAGE_SCHEMA_VERSION = 3
+export const STORAGE_SCHEMA_VERSION = 4
 
-export const LEGACY_STORAGE_SCHEMA_VERSIONS = [1, 2] as const
+export const LEGACY_STORAGE_SCHEMA_VERSIONS = [1, 2, 3] as const
 
 export const STORAGE_KEY = 'watersort.campaign.v1'
 

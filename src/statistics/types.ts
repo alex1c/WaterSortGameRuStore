@@ -34,6 +34,15 @@ export interface GameStatistics {
 	 */
 	freePlayCompleted: number
 	freePlayCompletedByDifficulty: Record<CampaignDifficultyBand, number>
+	/**
+	 * Daily Puzzle completions (unique calendar dates counted once).
+	 * Do NOT feed campaign levelsCompleted / milestone achievements.
+	 * Lifetime pours/hints/undos/restarts MAY include Daily actions.
+	 */
+	dailyCompleted: number
+	dailyCurrentStreak: number
+	dailyBestStreak: number
+	dailyCompletedByDifficulty: Record<CampaignDifficultyBand, number>
 }
 
 /** Flags for the current open attempt of a level. */
@@ -67,6 +76,16 @@ export function createEmptyStatistics(): GameStatistics {
 		withoutRestartLevelNumbers: [],
 		freePlayCompleted: 0,
 		freePlayCompletedByDifficulty: {
+			BEGINNER: 0,
+			EASY: 0,
+			MEDIUM: 0,
+			HARD: 0,
+			EXPERT: 0,
+		},
+		dailyCompleted: 0,
+		dailyCurrentStreak: 0,
+		dailyBestStreak: 0,
+		dailyCompletedByDifficulty: {
 			BEGINNER: 0,
 			EASY: 0,
 			MEDIUM: 0,

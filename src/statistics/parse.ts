@@ -42,6 +42,18 @@ export function parseGameStatistics(value: unknown): GameStatistics {
 			freePlayCompletedByDifficulty[key] = asNonNegInt(raw[key], 0)
 		}
 	}
+	const dailyCompletedByDifficulty = {
+		...empty.dailyCompletedByDifficulty,
+	}
+	if (
+		record.dailyCompletedByDifficulty &&
+		typeof record.dailyCompletedByDifficulty === 'object'
+	) {
+		const raw = record.dailyCompletedByDifficulty as Record<string, unknown>
+		for (const key of DIFFICULTIES) {
+			dailyCompletedByDifficulty[key] = asNonNegInt(raw[key], 0)
+		}
+	}
 	return {
 		levelsCompleted: asNonNegInt(record.levelsCompleted, 0),
 		totalPours: asNonNegInt(record.totalPours, 0),
@@ -64,6 +76,10 @@ export function parseGameStatistics(value: unknown): GameStatistics {
 		),
 		freePlayCompleted: asNonNegInt(record.freePlayCompleted, 0),
 		freePlayCompletedByDifficulty,
+		dailyCompleted: asNonNegInt(record.dailyCompleted, 0),
+		dailyCurrentStreak: asNonNegInt(record.dailyCurrentStreak, 0),
+		dailyBestStreak: asNonNegInt(record.dailyBestStreak, 0),
+		dailyCompletedByDifficulty,
 	}
 }
 
@@ -214,6 +230,39 @@ export function recordFreePlayCompletion(
 		freePlayCompletedByDifficulty: {
 			...stats.freePlayCompletedByDifficulty,
 			[difficulty]: stats.freePlayCompletedByDifficulty[difficulty] + 1,
+		},
+	}
+}
+
+/**
+ * Record a Daily Puzzle completion (idempotent for stats counters).
+ * Does NOT touch campaign levelsCompleted / highestLevelCompleted / milestones.
+ * First completion of a date increments dailyCompleted + difficulty bucket.
+ * Streak fields are synced from Daily state (source of truth).
+ */
+export function recordDailyStatsCompletion(
+	stats: GameStatistics,
+	difficulty: CampaignDifficultyBand,
+	options: {
+		wasFirstCompletion: boolean
+		currentStreak: number
+		bestStreak: number
+	},
+): GameStatistics {
+	const next: GameStatistics = {
+		...stats,
+		dailyCurrentStreak: options.currentStreak,
+		dailyBestStreak: Math.max(stats.dailyBestStreak, options.bestStreak),
+	}
+	if (!options.wasFirstCompletion) {
+		return next
+	}
+	return {
+		...next,
+		dailyCompleted: next.dailyCompleted + 1,
+		dailyCompletedByDifficulty: {
+			...next.dailyCompletedByDifficulty,
+			[difficulty]: next.dailyCompletedByDifficulty[difficulty] + 1,
 		},
 	}
 }

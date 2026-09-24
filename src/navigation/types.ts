@@ -12,6 +12,9 @@ export type AppRouteName =
 	| 'about'
 	| 'free_play'
 	| 'free_play_game'
+	| 'daily'
+	| 'daily_game'
+	| 'daily_history'
 
 export type AppRoute = { name: AppRouteName }
 
@@ -20,6 +23,7 @@ export type AppRoute = { name: AppRouteName }
  *
  * Most hub routes → Home
  * ABOUT → previous (Settings) when present
+ * DAILY_GAME / DAILY_HISTORY → Daily hub (preserve today's session)
  * FREE_PLAY / FREE_PLAY_GAME → Home (preserve Free Play session)
  * HOME → null (system exit)
  */
@@ -31,6 +35,10 @@ export function resolveBackTarget(stack: AppRoute[]): AppRouteName | null {
 	if (top.name === 'about') {
 		const previous = stack[stack.length - 2]
 		return previous?.name ?? 'home'
+	}
+
+	if (top.name === 'daily_game' || top.name === 'daily_history') {
+		return 'daily'
 	}
 
 	return 'home'

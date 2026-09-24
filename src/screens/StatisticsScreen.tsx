@@ -59,6 +59,11 @@ export function StatisticsScreen({ statistics, onClose }: StatisticsScreenProps)
 				<StatRow label="Отмен использовано" value={String(s.undosUsed)} />
 				<StatRow label="Перезапусков" value={String(s.restartsUsed)} />
 
+				<Text style={styles.section}>Головоломка дня</Text>
+				<StatRow label="Решено дней" value={String(s.dailyCompleted)} />
+				<StatRow label="Текущая серия" value={String(s.dailyCurrentStreak)} />
+				<StatRow label="Лучшая серия" value={String(s.dailyBestStreak)} />
+
 				<Text style={styles.section}>По сложности</Text>
 				{(
 					['BEGINNER', 'EASY', 'MEDIUM', 'HARD', 'EXPERT'] as const

@@ -12,9 +12,12 @@ interface HomeScreenProps {
 	continueDifficultyLabel: string
 	levelsCompleted: number
 	hasMidLevelSession: boolean
+	dailyCompletedToday: boolean
+	dailyActiveStreak: number
 	onContinue: () => void
 	onOpenLevels: () => void
 	onOpenFreePlay: () => void
+	onOpenDaily: () => void
 	onOpenAchievements: () => void
 	onOpenStatistics: () => void
 	onOpenSettings: () => void
@@ -29,9 +32,12 @@ export function HomeScreen({
 	continueDifficultyLabel,
 	levelsCompleted,
 	hasMidLevelSession,
+	dailyCompletedToday,
+	dailyActiveStreak,
 	onContinue,
 	onOpenLevels,
 	onOpenFreePlay,
+	onOpenDaily,
 	onOpenAchievements,
 	onOpenStatistics,
 	onOpenSettings,
@@ -89,6 +95,20 @@ export function HomeScreen({
 					testID="home-free-play"
 				>
 					<Text style={styles.secondaryLabel}>Свободная игра</Text>
+				</Pressable>
+
+				<Pressable
+					accessibilityRole="button"
+					onPress={onOpenDaily}
+					style={({ pressed }) => [styles.secondary, pressed && styles.pressed]}
+					testID="home-daily"
+				>
+					<Text style={styles.secondaryLabel}>
+						Головоломка дня{dailyCompletedToday ? ' ✓' : ''}
+					</Text>
+					{dailyActiveStreak > 0 ? (
+						<Text style={styles.dailyMeta}>🔥 Серия: {dailyActiveStreak}</Text>
+					) : null}
 				</Pressable>
 
 				<View style={styles.row}>
@@ -191,6 +211,12 @@ const styles = StyleSheet.create({
 		fontSize: 16,
 		fontWeight: '700',
 		color: uiColors.textPrimary,
+	},
+	dailyMeta: {
+		marginTop: 2,
+		fontSize: 13,
+		fontWeight: '600',
+		color: uiColors.textSecondary,
 	},
 	row: {
 		flexDirection: 'row',

@@ -35,6 +35,21 @@ export function useAppNavigation(initial: AppRouteName = 'home') {
 			setStack(replaceStack({ name: 'home' }))
 			return true
 		}
+		if (target === 'daily') {
+			// Daily game/history → Daily hub (keep Home under it when possible).
+			setStack((prev) => {
+				const trimmed = prev.filter(
+					(route) =>
+						route.name !== 'daily_game' && route.name !== 'daily_history',
+				)
+				if (trimmed.some((route) => route.name === 'daily')) {
+					return trimmed
+				}
+				const withoutTop = trimmed.length > 0 ? trimmed : [{ name: 'home' as const }]
+				return pushRoute(withoutTop, { name: 'daily' })
+			})
+			return true
+		}
 		// ABOUT → Settings: trim to the previous route.
 		setStack((prev) => {
 			if (prev.length <= 1) return replaceStack({ name: 'home' })

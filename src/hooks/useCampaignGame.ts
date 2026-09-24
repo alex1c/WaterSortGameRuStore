@@ -66,7 +66,12 @@ import {
 	createEmptyFreePlayState,
 	type PersistedFreePlayState,
 } from '../freePlay'
+import {
+	createEmptyDailyState,
+	type PersistedDailyState,
+} from '../daily'
 import { useFreePlayGame, type FreePlayController } from './useFreePlayGame'
+import { useDailyGame, type DailyController } from './useDailyGame'
 
 export type TrainingStep = 'pick-source' | 'pick-destination' | 'encourage' | 'done'
 
@@ -122,6 +127,7 @@ export interface CampaignGameController {
 	openLevel: (levelNumber: number) => void
 	dismissCampaignFinished: () => void
 	freePlay: FreePlayController
+	daily: DailyController
 }
 
 export function useCampaignGame(): CampaignGameController {
@@ -174,6 +180,11 @@ export function useCampaignGame(): CampaignGameController {
 		createEmptyFreePlayState,
 	)
 	const [freePlayTick, setFreePlayTick] = useState(0)
+	const dailyRef = useRef<PersistedDailyState>(createEmptyDailyState())
+	const [initialDaily, setInitialDaily] = useState<PersistedDailyState>(
+		createEmptyDailyState,
+	)
+	const [dailyTick, setDailyTick] = useState(0)
 
 	const showToast = useCallback((message: string) => {
 		if (toastTimerRef.current) clearTimeout(toastTimerRef.current)
@@ -315,6 +326,8 @@ export function useCampaignGame(): CampaignGameController {
 			achievementsRef.current = saved.achievements
 			freePlayRef.current = saved.freePlay
 			setInitialFreePlay(saved.freePlay)
+			dailyRef.current = saved.daily
+			setInitialDaily(saved.daily)
 
 			setHighestUnlockedLevel(saved.highestUnlockedLevel)
 			setCampaignComplete(saved.campaignComplete)
@@ -364,6 +377,7 @@ export function useCampaignGame(): CampaignGameController {
 			statistics: statisticsRef.current,
 			achievements: achievementsRef.current,
 			freePlay: freePlayRef.current,
+			daily: dailyRef.current,
 			session: {
 				levelNumber,
 				seed,
@@ -392,6 +406,7 @@ export function useCampaignGame(): CampaignGameController {
 		achievements,
 		attempt,
 		freePlayTick,
+		dailyTick,
 	])
 
 	const updateSettings = useCallback((patch: Partial<GameSettings>) => {
@@ -688,6 +703,10 @@ export function useCampaignGame(): CampaignGameController {
 		setFreePlayTick((value) => value + 1)
 	}, [])
 
+	const bumpDailyTick = useCallback(() => {
+		setDailyTick((value) => value + 1)
+	}, [])
+
 	const setStatisticsAndRef = useCallback((next: GameStatistics) => {
 		statisticsRef.current = next
 		setStatistics(next)
@@ -706,6 +725,14 @@ export function useCampaignGame(): CampaignGameController {
 		[bumpFreePlayTick],
 	)
 
+	const setDailyState = useCallback(
+		(next: PersistedDailyState) => {
+			dailyRef.current = next
+			bumpDailyTick()
+		},
+		[bumpDailyTick],
+	)
+
 	const freePlay = useFreePlayGame({
 		getSettings: () => settingsRef.current,
 		getStatistics: () => statisticsRef.current,
@@ -715,6 +742,17 @@ export function useCampaignGame(): CampaignGameController {
 		getFreePlay: () => freePlayRef.current,
 		setFreePlay: setFreePlayState,
 		initialFreePlay,
+	})
+
+	const daily = useDailyGame({
+		getSettings: () => settingsRef.current,
+		getStatistics: () => statisticsRef.current,
+		setStatistics: setStatisticsAndRef,
+		getAchievements: () => achievementsRef.current,
+		setAchievements: setAchievementsAndRef,
+		getDaily: () => dailyRef.current,
+		setDaily: setDailyState,
+		initialDaily,
 	})
 
 	return {
@@ -761,6 +799,7 @@ export function useCampaignGame(): CampaignGameController {
 		openLevel,
 		dismissCampaignFinished: () => setShowCampaignFinished(false),
 		freePlay,
+		daily,
 	}
 }
 

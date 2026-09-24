@@ -17,14 +17,17 @@ import {
 	createEmptyFreePlayState,
 	type PersistedFreePlayState,
 } from '../freePlay'
+import {
+	createEmptyDailyState,
+	type PersistedDailyState,
+} from '../daily'
 
 /**
- * Schema v5: Free Play session isolated from Campaign.
- * v1–v4 migrate: freePlay defaults to empty; campaign progress preserved.
+ * Schema v6: Daily Puzzle + streak, isolated from Campaign / Free Play.
  */
-export const STORAGE_SCHEMA_VERSION = 5
+export const STORAGE_SCHEMA_VERSION = 6
 
-export const LEGACY_STORAGE_SCHEMA_VERSIONS = [1, 2, 3, 4] as const
+export const LEGACY_STORAGE_SCHEMA_VERSIONS = [1, 2, 3, 4, 5] as const
 
 export const STORAGE_KEY = 'watersort.campaign.v1'
 
@@ -37,7 +40,6 @@ export interface PersistedLevelSession {
 	currentBoard: Board
 	moveHistory: Board[]
 	moveCount: number
-	/** Per-attempt flags for statistics (optional on legacy sessions). */
 	attempt?: AttemptFlags
 }
 
@@ -51,8 +53,8 @@ export interface PersistedGameState {
 	settings: GameSettings
 	statistics: GameStatistics
 	achievements: AchievementState
-	/** Isolated Free Play state — never shares Campaign session boards. */
 	freePlay: PersistedFreePlayState
+	daily: PersistedDailyState
 }
 
 export function createDefaultPersistedState(): PersistedGameState {
@@ -67,5 +69,6 @@ export function createDefaultPersistedState(): PersistedGameState {
 		statistics: createEmptyStatistics(),
 		achievements: createEmptyAchievementState(),
 		freePlay: createEmptyFreePlayState(),
+		daily: createEmptyDailyState(),
 	}
 }

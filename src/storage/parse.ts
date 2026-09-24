@@ -15,6 +15,7 @@ import {
 	reconstructAchievementsFromStats,
 } from '../achievements'
 import { parseFreePlayState } from '../freePlay'
+import { parseDailyState } from '../daily'
 import {
 	STORAGE_SCHEMA_VERSION,
 	LEGACY_STORAGE_SCHEMA_VERSIONS,
@@ -25,12 +26,14 @@ import {
 
 /**
  * Pure parser used by tests and the async loader.
- * Accepts schema v1–v5. Never throws.
+ * Accepts schema v1–v6. Never throws.
  *
  * Migration notes:
  * - v3 → v4: old campaignComplete (100-level) unlocks 101, clears complete flag.
  * - v4 → v5: freePlay defaults to empty; Campaign session untouched.
+ * - v5 → v6: daily defaults to empty; Campaign / Free Play untouched.
  * - Corrupt freePlay subsection → empty Free Play only.
+ * - Corrupt daily subsection → empty Daily only.
  * - Historical pours / hint / undo / restart counts are NOT invented.
  */
 export function parsePersistedGameState(raw: string): PersistedGameState {
@@ -65,6 +68,7 @@ export function parsePersistedGameState(raw: string): PersistedGameState {
 		const session = parseSession(record.session)
 		const settings = parseGameSettings(record.settings)
 		const freePlay = parseFreePlayState(record.freePlay)
+		const daily = parseDailyState(record.daily)
 
 		// v3 (and earlier) campaignComplete meant the 100-level milestone.
 		if (incomingSchema <= 3 && campaignComplete) {
@@ -103,6 +107,7 @@ export function parsePersistedGameState(raw: string): PersistedGameState {
 			statistics,
 			achievements,
 			freePlay,
+			daily,
 		}
 	} catch {
 		return fallback

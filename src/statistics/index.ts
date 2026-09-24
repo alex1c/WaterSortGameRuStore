@@ -8,6 +8,7 @@ export {
 	parseAttemptFlags,
 	parseGameStatistics,
 	reconstructStatisticsFromProgress,
+	recordDailyStatsCompletion,
 	recordFreePlayCompletion,
 	recordHintUsed,
 	recordLevelCompletion,

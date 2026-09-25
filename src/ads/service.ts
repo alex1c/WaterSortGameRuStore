@@ -3,7 +3,6 @@ import {
 	MobileAds,
 	RewardedAdLoader,
 	type InterstitialAd,
-	type RewardedAd,
 } from 'yandex-mobile-ads'
 
 import { AD_UNIT_IDS } from './config'
@@ -13,7 +12,7 @@ import {
 	recordInterstitialShown,
 	recordLevelCompleted,
 } from './policy'
-import { createRewardGrantGuard } from './rewardedPolicy'
+import { createRewardedLifecycleSession } from './rewardedLifecycle'
 
 let adsInitialized = false
 let interstitialLoader: InterstitialAdLoader | null = null
@@ -97,29 +96,42 @@ export async function maybeShowInterstitialAfterLevelCompleted(options: {
 
 /**
  * Rewarded ads unlock voluntary help: hint packs and an extra empty tube.
- * Callers must supply the grant action; only onAdRewarded can invoke it.
+ *
+ * Settlement must NOT depend solely on ad.show() resolving. Yandex RewardedAd.show()
+ * is documented to reject on error; on Android it may never resolve after dismiss.
+ * UI completion waits for onAdDismissed / onAdFailedToShow / show() reject / fail-safe.
+ *
+ * Verified onRewarded remains the only grant path.
  */
 export async function showRewarded(
 	onRewardGranted: () => void,
 ): Promise<boolean> {
 	if (rewardedLoading) return false
 	rewardedLoading = true
-	let ad: RewardedAd | null = null
 	try {
 		const loader = await RewardedAdLoader.create()
-		ad = await loader.loadAd({ adUnitId: AD_UNIT_IDS.rewarded })
-		const guard = createRewardGrantGuard(onRewardGranted)
+		const ad = await loader.loadAd({ adUnitId: AD_UNIT_IDS.rewarded })
+		const session = createRewardedLifecycleSession(onRewardGranted)
+
 		ad.onRewarded = () => {
-			guard.onVerifiedReward()
+			session.onRewarded()
 		}
 		ad.onAdDismissed = () => {
-			guard.onDismissed()
+			session.onAdDismissed()
 		}
 		ad.onAdFailedToShow = () => {
-			guard.onDismissed()
+			session.onAdFailedToShow()
 		}
-		await ad.show()
-		return guard.hasGranted()
+
+		// Fire show without awaiting its resolve — settle via native terminal events.
+		void ad.show().then(
+			() => undefined,
+			() => {
+				session.onShowPromiseRejected()
+			},
+		)
+
+		return await session.promise
 	} catch {
 		return false
 	} finally {

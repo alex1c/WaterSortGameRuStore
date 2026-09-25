@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 
 import type { HelpDialogKind } from '../components/HelpSheet'
 import { trackEvent } from '../analytics'
+import { REWARDED_LIFECYCLE_FAILSAFE_MS } from '../ads'
 import type { Board, Move } from '../game'
 import {
 	applyExtraTubeToSessionBoards,
@@ -69,6 +70,7 @@ export function usePuzzleHelpUi(options: {
 	const helpRef = useRef(help)
 	const searchingRef = useRef(false)
 	const rewardBusyRef = useRef(false)
+	const rewardBusyStartedAtRef = useRef<number | null>(null)
 	const optionsRef = useRef(options)
 
 	useEffect(() => {
@@ -78,6 +80,35 @@ export function usePuzzleHelpUi(options: {
 	useEffect(() => {
 		optionsRef.current = options
 	}, [options])
+
+	const clearRewardBusy = useCallback(() => {
+		rewardBusyRef.current = false
+		rewardBusyStartedAtRef.current = null
+		setRewardLoading(false)
+	}, [])
+
+	const beginRewardBusy = useCallback(() => {
+		rewardBusyRef.current = true
+		rewardBusyStartedAtRef.current = Date.now()
+		setRewardLoading(true)
+	}, [])
+
+	/**
+	 * True while a native rewarded flow is active.
+	 * If busy somehow outlives the ads fail-safe, unlock the sheet so Back works.
+	 */
+	const isRewardBusy = useCallback(() => {
+		if (!rewardBusyRef.current) return false
+		const started = rewardBusyStartedAtRef.current
+		if (
+			started !== null &&
+			Date.now() - started > REWARDED_LIFECYCLE_FAILSAFE_MS + 5_000
+		) {
+			clearRewardBusy()
+			return false
+		}
+		return true
+	}, [clearRewardBusy])
 
 	const resetHelp = useCallback((next?: PuzzleHelpState) => {
 		const value = next ?? createInitialPuzzleHelpState()
@@ -103,15 +134,15 @@ export function usePuzzleHelpUi(options: {
 	}, [])
 
 	const closeHelpSheet = useCallback(() => {
-		if (rewardBusyRef.current) return
+		if (isRewardBusy()) return
 		setHelpSheetVisible(false)
 		setHelpDialog(null)
-	}, [])
+	}, [isRewardBusy])
 
 	const cancelHelpDialog = useCallback(() => {
-		if (rewardBusyRef.current) return
+		if (isRewardBusy()) return
 		setHelpDialog('menu')
-	}, [])
+	}, [isRewardBusy])
 
 	const applyValidHint = useCallback((move: Move) => {
 		const nextHelp = consumeSuccessfulHint(helpRef.current)
@@ -189,10 +220,9 @@ export function usePuzzleHelpUi(options: {
 	}, [])
 
 	const confirmHintPack = useCallback(() => {
-		if (rewardBusyRef.current || searchingRef.current) return
+		if (isRewardBusy() || searchingRef.current) return
 		const opts = optionsRef.current
-		rewardBusyRef.current = true
-		setRewardLoading(true)
+		beginRewardBusy()
 
 		void (async () => {
 			try {
@@ -210,8 +240,7 @@ export function usePuzzleHelpUi(options: {
 				if (result === 'granted' && granted) {
 					opts.showToast('Получено: 3 подсказки')
 					setHelpDialog('menu')
-					rewardBusyRef.current = false
-					setRewardLoading(false)
+					clearRewardBusy()
 					// After grant, fulfill the original hint if a credit remains.
 					await runHintSearch()
 					return
@@ -219,22 +248,20 @@ export function usePuzzleHelpUi(options: {
 				opts.showToast('Реклама сейчас недоступна. Попробуйте позже.')
 				setHelpDialog('menu')
 			} finally {
-				rewardBusyRef.current = false
-				setRewardLoading(false)
+				clearRewardBusy()
 			}
 		})()
-	}, [runHintSearch])
+	}, [beginRewardBusy, clearRewardBusy, isRewardBusy, runHintSearch])
 
 	const confirmExtraTube = useCallback(() => {
-		if (rewardBusyRef.current || searchingRef.current) return
+		if (isRewardBusy() || searchingRef.current) return
 		const opts = optionsRef.current
 		if (!canGrantExtraTube(helpRef.current)) {
 			opts.showToast('Дополнительная пробирка добавлена')
 			setHelpDialog('menu')
 			return
 		}
-		rewardBusyRef.current = true
-		setRewardLoading(true)
+		beginRewardBusy()
 
 		void (async () => {
 			try {
@@ -268,11 +295,10 @@ export function usePuzzleHelpUi(options: {
 					setHelpDialog('menu')
 				}
 			} finally {
-				rewardBusyRef.current = false
-				setRewardLoading(false)
+				clearRewardBusy()
 			}
 		})()
-	}, [])
+	}, [beginRewardBusy, clearRewardBusy, isRewardBusy])
 
 	return {
 		help,

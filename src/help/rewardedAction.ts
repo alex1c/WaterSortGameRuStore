@@ -4,10 +4,13 @@ export type RewardedActionResult = 'granted' | 'dismissed_or_failed'
 
 /**
  * Run a single rewarded request with exactly one grant path:
- * the verified SDK callback. The boolean return from showRewarded is
- * used only as a mirror of the guard — never as a second grant trigger.
+ * the verified SDK onRewarded callback inside showRewarded().
  *
- * Callers must not grant rewards when this returns dismissed_or_failed.
+ * The boolean returned by showRewarded mirrors whether a verified grant
+ * occurred — it must never trigger a second grant here.
+ *
+ * showRewarded is required to settle on dismiss / fail / fail-safe so this
+ * await cannot hang forever after a completed ad.
  */
 export async function runVerifiedRewardedAction(
 	onGrant: () => void,

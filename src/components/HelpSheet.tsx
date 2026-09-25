@@ -31,6 +31,10 @@ interface HelpSheetProps {
 /**
  * Compact voluntary-help sheet. Lives in the normal flex stack flow via a
  * Modal overlay — never absolutely pinned under system navigation.
+ *
+ * While rewardLoading is true the parent blocks dismiss so the sheet cannot
+ * close under a live native ad. After lifecycle settlement / fail-safe,
+ * rewardLoading clears and Android Back / cancel work again.
  */
 export function HelpSheet({
 	visible,
@@ -49,14 +53,27 @@ export function HelpSheet({
 	const credits = totalHintCredits(help)
 	const canOfferTube = canGrantExtraTube(help) && !isSolved
 
+	const handleRequestClose = () => {
+		// Prefer returning to the help menu from offer dialogs; otherwise close.
+		if (dialog === 'hint_pack_offer' || dialog === 'extra_tube_confirm') {
+			onCancelDialog()
+			return
+		}
+		onClose()
+	}
+
 	return (
 		<Modal
 			visible={visible}
 			transparent
 			animationType="fade"
-			onRequestClose={onClose}
+			onRequestClose={handleRequestClose}
 		>
-			<Pressable style={styles.backdrop} onPress={onClose} testID="help-sheet-backdrop">
+			<Pressable
+				style={styles.backdrop}
+				onPress={rewardLoading ? undefined : handleRequestClose}
+				testID="help-sheet-backdrop"
+			>
 				<Pressable style={styles.sheet} onPress={(e) => e.stopPropagation()} testID="help-sheet">
 					{dialog === null || dialog === 'menu' ? (
 						<HelpMenu

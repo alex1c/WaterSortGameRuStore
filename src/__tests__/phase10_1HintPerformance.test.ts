@@ -96,8 +96,8 @@ describe('PH10.1 hint performance budgets', () => {
 
 		// Deterministic already-solved fixture (complete monochrome tubes).
 		const solvedBoard: Board = [
-			[1, 1, 1, 1],
-			[2, 2, 2, 2],
+			['1', '1', '1', '1'],
+			['2', '2', '2', '2'],
 			[],
 			[],
 		]
@@ -110,8 +110,8 @@ describe('PH10.1 hint performance budgets', () => {
 
 		// Valid board with no legal moves and not solved → exhaustive unsolvable.
 		const dead: Board = [
-			[1, 1, 1, 2],
-			[2, 2, 2, 1],
+			['1', '1', '1', '2'],
+			['2', '2', '2', '1'],
 		]
 		expect(isSolved(dead)).toBe(false)
 		const unsolvable = findHintMove(dead, {

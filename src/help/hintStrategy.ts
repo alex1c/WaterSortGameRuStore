@@ -10,23 +10,34 @@ import {
 } from '../game'
 
 /**
- * Fast responsive pass — same budget as historical production callers.
- * Prefer returning quickly so the UI stays interactive.
+ * Fast pass budget for the shared Hint path.
+ *
+ * Calibrated from PH10.1 desktop benchmarks against Campaign L446
+ * (worst known audit case: ~5941 explored states) plus representative
+ * HARD/EXPERT / Free Play / Daily / 14-tube boards.
+ *
+ * All measured generated puzzles solved well under this state ceiling.
+ * timeoutMs is only a secondary guard — work still runs synchronously
+ * on the React Native JS thread.
  */
 export const HINT_FAST_BUDGET: Required<SolverOptions> = {
-	maxStates: 250_000,
-	maxDepth: 250,
-	timeoutMs: 4_000,
+	maxStates: 25_000,
+	maxDepth: 180,
+	timeoutMs: 2_000,
 }
 
 /**
- * Stronger deferred pass when the fast search hits a cutoff.
- * Still bounded so Android cannot freeze for unbounded wall time.
+ * Stronger second pass after a fast cutoff.
+ *
+ * Intentionally far below the previous 1_000_000 / 8s budget. Pathological
+ * player positions may still exhaust this bound; recovery guidance is then
+ * preferred over a long UI freeze. timeoutMs caps wall-clock work but does
+ * not move solve() off the JS thread.
  */
 export const HINT_STRONG_BUDGET: Required<SolverOptions> = {
-	maxStates: 1_000_000,
-	maxDepth: 400,
-	timeoutMs: 8_000,
+	maxStates: 80_000,
+	maxDepth: 220,
+	timeoutMs: 1_500,
 }
 
 export type HintSearchStatus =
@@ -41,16 +52,21 @@ export interface HintSearchResult {
 	move: Move | null
 	/** Which budget produced the result (if any). */
 	pass: 'fast' | 'strong' | 'none'
+	/** States explored by the pass that produced this result (0 if none). */
+	exploredStates: number
 }
 
 /**
  * Shared Campaign / Free Play / Daily hint strategy.
  *
- * 1) Fast pass for responsive UX.
- * 2) If cutoff/timeout → stronger bounded search.
+ * 1) Fast synchronous solve with a phone-safe budget.
+ * 2) If cutoff → stronger synchronous solve (still bounded).
  * 3) Never invent a move: every returned move must be legal on currentBoard
  *    and come from a solver-confirmed continuation.
  * 4) Distinguishes cutoff vs exhaustive unsolvable when the solver reports it.
+ *
+ * Both passes run on the JS thread. Budgets exist to bound freeze duration,
+ * not to imply background/parallel execution.
  */
 export function findHintMove(
 	board: Board,
@@ -62,7 +78,12 @@ export function findHintMove(
 	},
 ): HintSearchResult {
 	if (isSolved(board)) {
-		return { status: 'already_solved', move: null, pass: 'none' }
+		return {
+			status: 'already_solved',
+			move: null,
+			pass: 'none',
+			exploredStates: 0,
+		}
 	}
 
 	const fastBudget = { ...HINT_FAST_BUDGET, ...options?.fast }
@@ -85,8 +106,11 @@ export function findHintMove(
 }
 
 /**
- * Async wrapper: yields to the UI between fast and strong passes so the
- * stronger search does not block the first paint of "Ищем подсказку…".
+ * Async wrapper that yields once between passes so React can paint the
+ * "Ищем подсказку…" state before the second synchronous solve.
+ *
+ * Important: yieldToUi() does NOT run solve() in parallel or on another
+ * thread. The strong pass still blocks the JS thread for up to its budget.
  */
 export async function findHintMoveAsync(
 	board: Board,
@@ -97,7 +121,12 @@ export async function findHintMoveAsync(
 	},
 ): Promise<HintSearchResult> {
 	if (isSolved(board)) {
-		return { status: 'already_solved', move: null, pass: 'none' }
+		return {
+			status: 'already_solved',
+			move: null,
+			pass: 'none',
+			exploredStates: 0,
+		}
 	}
 
 	const fastBudget = { ...HINT_FAST_BUDGET, ...options?.fast }
@@ -117,19 +146,38 @@ export async function findHintMoveAsync(
 	return { ...strong, pass: 'strong' }
 }
 
-function runHintPass(board: Board, budget: SolverOptions): Omit<HintSearchResult, 'pass'> {
+function runHintPass(
+	board: Board,
+	budget: SolverOptions,
+): Omit<HintSearchResult, 'pass'> {
 	const result = solve(board, budget)
 	if (result.solved) {
 		const move = result.moves[0] ?? getHint(board, budget)
 		if (!move || !isLegalSolverBackedMove(board, move)) {
-			return { status: 'illegal_guard', move: null }
+			return {
+				status: 'illegal_guard',
+				move: null,
+				exploredStates: result.exploredStates,
+			}
 		}
-		return { status: 'found', move }
+		return {
+			status: 'found',
+			move,
+			exploredStates: result.exploredStates,
+		}
 	}
 	if (result.cutoff) {
-		return { status: 'cutoff', move: null }
+		return {
+			status: 'cutoff',
+			move: null,
+			exploredStates: result.exploredStates,
+		}
 	}
-	return { status: 'unsolvable', move: null }
+	return {
+		status: 'unsolvable',
+		move: null,
+		exploredStates: result.exploredStates,
+	}
 }
 
 /**
@@ -160,6 +208,10 @@ export function hintFailureMessage(status: HintSearchStatus): string {
 	}
 }
 
+/**
+ * Yields a macrotask so React can commit the searching UI before the next
+ * synchronous solve. This is not background execution.
+ */
 function yieldToUi(): Promise<void> {
 	return new Promise((resolve) => {
 		setTimeout(resolve, 0)

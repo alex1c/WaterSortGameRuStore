@@ -28,6 +28,7 @@ interface LevelSelectScreenProps {
 	campaignComplete: boolean
 	onSelectLevel: (levelNumber: number) => void
 	onClose: () => void
+	onOpenFreePlay?: () => void
 }
 
 /**
@@ -45,6 +46,7 @@ export function LevelSelectScreen({
 	campaignComplete,
 	onSelectLevel,
 	onClose,
+	onOpenFreePlay,
 }: LevelSelectScreenProps) {
 	const insets = useSafeAreaInsets()
 	const pageCount = getLevelSelectPageCount()
@@ -267,6 +269,23 @@ export function LevelSelectScreen({
 				})}
 			</ScrollView>
 
+			{onOpenFreePlay ? (
+				<Pressable
+					accessibilityRole="button"
+					accessibilityLabel="Свободная игра"
+					onPress={onOpenFreePlay}
+					style={({ pressed }) => [
+						styles.freePlayLink,
+						pressed && styles.pressed,
+					]}
+					testID="levels-free-play-link"
+				>
+					<Text style={styles.freePlayLinkText}>
+						Хотите другую сложность? Свободная игра →
+					</Text>
+				</Pressable>
+			) : null}
+
 			<View style={styles.bottomStack}>
 				<BannerSlot placement="levels" testID="ad-banner-levels" />
 				<View
@@ -482,6 +501,17 @@ const styles = StyleSheet.create({
 	},
 	pressed: {
 		opacity: 0.85,
+	},
+	freePlayLink: {
+		paddingHorizontal: spacing.md,
+		paddingVertical: spacing.sm,
+		alignItems: 'center',
+	},
+	freePlayLinkText: {
+		fontSize: 13,
+		fontWeight: '600',
+		color: uiColors.tubeSelected,
+		textAlign: 'center',
 	},
 	bottomStack: {
 		width: '100%',

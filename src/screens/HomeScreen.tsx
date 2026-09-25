@@ -95,6 +95,9 @@ export function HomeScreen({
 					testID="home-free-play"
 				>
 					<Text style={styles.secondaryLabel}>Свободная игра</Text>
+					<Text style={styles.freePlayMeta}>
+						Выберите сложность — вплоть до Эксперта
+					</Text>
 				</Pressable>
 
 				<Pressable
@@ -206,11 +209,20 @@ const styles = StyleSheet.create({
 		backgroundColor: uiColors.controlBackground,
 		alignItems: 'center',
 		justifyContent: 'center',
+		paddingVertical: spacing.sm,
 	},
 	secondaryLabel: {
 		fontSize: 16,
 		fontWeight: '700',
 		color: uiColors.textPrimary,
+	},
+	freePlayMeta: {
+		marginTop: 3,
+		fontSize: 12,
+		fontWeight: '500',
+		color: uiColors.textSecondary,
+		textAlign: 'center',
+		paddingHorizontal: spacing.sm,
 	},
 	dailyMeta: {
 		marginTop: 2,

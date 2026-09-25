@@ -6,6 +6,7 @@ export const ANALYTICS_EVENT_NAMES = [
 	'level_completed',
 	'level_restarted',
 	'hint_used',
+	'hint_provided',
 	'undo_used',
 	'level_selected',
 	'settings_changed',
@@ -20,6 +21,12 @@ export const ANALYTICS_EVENT_NAMES = [
 	'daily_opened',
 	'daily_started',
 	'daily_completed',
+	'rewarded_hint_offer',
+	'rewarded_hint_granted',
+	'rewarded_extra_tube_offer',
+	'rewarded_extra_tube_granted',
+	'free_play_discovery_shown',
+	'free_play_discovery_opened',
 ] as const
 
 export type AnalyticsEventName = (typeof ANALYTICS_EVENT_NAMES)[number]
@@ -32,6 +39,7 @@ const ALLOWED_PARAMETERS: Record<AnalyticsEventName, readonly string[]> = {
 	level_completed: ['level_number', 'difficulty', 'move_count'],
 	level_restarted: ['level_number'],
 	hint_used: ['level_number', 'difficulty'],
+	hint_provided: ['mode', 'difficulty'],
 	undo_used: ['level_number'],
 	level_selected: ['level_number'],
 	settings_changed: [
@@ -51,6 +59,12 @@ const ALLOWED_PARAMETERS: Record<AnalyticsEventName, readonly string[]> = {
 	daily_opened: [],
 	daily_started: ['difficulty', 'date_key'],
 	daily_completed: ['difficulty', 'date_key', 'move_count', 'streak'],
+	rewarded_hint_offer: ['mode', 'difficulty'],
+	rewarded_hint_granted: ['mode', 'difficulty'],
+	rewarded_extra_tube_offer: ['mode', 'difficulty'],
+	rewarded_extra_tube_granted: ['mode', 'difficulty'],
+	free_play_discovery_shown: [],
+	free_play_discovery_opened: [],
 }
 
 export type AnalyticsParameter = string | number | boolean

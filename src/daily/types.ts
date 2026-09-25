@@ -1,9 +1,13 @@
 import type { Board } from '../game/types'
+import type { PuzzleHelpState } from '../help'
 import type { AttemptFlags } from '../statistics'
 import type { DailyDifficulty } from './config'
 import type { LocalDateKey } from './date'
 
-/** In-progress Daily session for one local calendar date. */
+/**
+ * In-progress Daily session for one local calendar date.
+ * initialBoard stays the ORIGINAL generated board for date/seed identity.
+ */
 export interface PersistedDailySession {
 	dateKey: LocalDateKey
 	difficulty: DailyDifficulty
@@ -14,6 +18,7 @@ export interface PersistedDailySession {
 	moveCount: number
 	attempt: AttemptFlags
 	isSolved: boolean
+	help: PuzzleHelpState
 }
 
 /**

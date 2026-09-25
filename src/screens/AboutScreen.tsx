@@ -16,6 +16,7 @@ import {
 	ABOUT_OTHER_APPS_URL,
 	ABOUT_PRIVACY_URL,
 	ABOUT_WEBSITE_URL,
+	APP_VERSION,
 } from '../about/config'
 import { CAMPAIGN_LEVEL_COUNT } from '../campaign'
 import { spacing, uiColors } from '../theme'
@@ -65,7 +66,7 @@ export function AboutScreen({ onClose }: AboutScreenProps) {
 				<Text style={styles.appName}>{ABOUT_APP_NAME}</Text>
 				<Text style={styles.meta}>{ABOUT_DEVELOPER}</Text>
 				<Text style={styles.meta}>Кампания: уровни 1–{CAMPAIGN_LEVEL_COUNT}</Text>
-				<Text style={styles.meta}>Версия 1.0.0</Text>
+				<Text style={styles.meta}>Версия {APP_VERSION}</Text>
 
 				<Pressable
 					accessibilityRole="button"

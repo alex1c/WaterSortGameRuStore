@@ -21,11 +21,15 @@ import {
 	applyMove,
 	canPour,
 	cloneBoard,
-	getHint,
 	isSolved,
 	type Board,
 	type Move,
 } from '../game'
+import {
+	buildRestartBoard,
+	createInitialPuzzleHelpState,
+	type PuzzleHelpState,
+} from '../help'
 import {
 	getPourAnimationMs,
 	type AnimationSpeed,
@@ -59,6 +63,7 @@ import {
 } from '../feedback'
 import { maybeShowInterstitialAfterLevelCompleted } from '../ads'
 import { trackEvent } from '../analytics'
+import { usePuzzleHelpUi } from './usePuzzleHelpUi'
 
 export interface DailyPourAnimation {
 	from: number
@@ -106,6 +111,17 @@ export interface DailyController {
 	handleRestart: () => void
 	shouldConfirmRestart: () => boolean
 	handleHint: () => void
+	openHelpSheet: () => void
+	closeHelpSheet: () => void
+	requestExtraTubeOffer: () => void
+	confirmHintPack: () => void
+	confirmExtraTube: () => void
+	cancelHelpDialog: () => void
+	help: PuzzleHelpState
+	helpSheetVisible: boolean
+	helpDialog: import('../components/HelpSheet').HelpDialogKind
+	hintSearching: boolean
+	rewardLoading: boolean
 }
 
 interface DailyHost {
@@ -149,6 +165,9 @@ export function useDailyGame(host: DailyHost): DailyController {
 		getDailyDifficulty(localDateKey((host.now ?? (() => new Date()))())),
 	)
 	const [seed, setSeed] = useState<string | null>(null)
+	/** Original generated board — Daily identity freeze; never gains extra tube. */
+	const [originalBoard, setOriginalBoard] = useState<Board>([])
+	/** Restart target (original + optional rewarded empty tube). */
 	const [initialBoard, setInitialBoard] = useState<Board>([])
 	const [currentBoard, setCurrentBoard] = useState<Board>([])
 	const [moveHistory, setMoveHistory] = useState<Board[]>([])
@@ -167,6 +186,20 @@ export function useDailyGame(host: DailyHost): DailyController {
 	const [dailySnapshot, setDailySnapshot] = useState<PersistedDailyState>(
 		host.initialDaily,
 	)
+
+	const boardRef = useRef<Board>([])
+	const originalBoardRef = useRef<Board>([])
+	const moveHistoryRef = useRef<Board[]>([])
+	const isPuzzleSolvedRef = useRef(false)
+	const difficultyRef = useRef<DailyDifficulty>(difficulty)
+
+	useEffect(() => {
+		boardRef.current = currentBoard
+		originalBoardRef.current = originalBoard
+		moveHistoryRef.current = moveHistory
+		isPuzzleSolvedRef.current = isPuzzleSolved
+		difficultyRef.current = difficulty
+	}, [currentBoard, originalBoard, moveHistory, isPuzzleSolved, difficulty])
 
 	useEffect(() => {
 		hostRef.current = host
@@ -205,35 +238,6 @@ export function useDailyGame(host: DailyHost): DailyController {
 		}
 	}, [discardStaleSession, publishDaily])
 
-	useEffect(() => {
-		if (hydratedFromStorageRef.current) return
-		hydratedFromStorageRef.current = true
-		const key = localDateKey(nowRef.current())
-		queueMicrotask(() => {
-			setTodayKey(key)
-			setDifficulty(getDailyDifficulty(key))
-			const normalized = discardStaleSession(host.initialDaily, key)
-			if (normalized !== host.initialDaily) {
-				publishDaily(normalized)
-			} else {
-				setDailySnapshot(normalized)
-			}
-			const saved = normalized.session
-			if (saved && saved.dateKey === key) {
-				attemptRef.current = saved.attempt
-				setAttempt(saved.attempt)
-				setDifficulty(saved.difficulty)
-				setSeed(saved.seed)
-				setInitialBoard(cloneBoard(saved.initialBoard))
-				setCurrentBoard(cloneBoard(saved.currentBoard))
-				setMoveHistory(saved.moveHistory.map(cloneBoard))
-				setMoveCount(saved.moveCount)
-				setIsPuzzleSolved(saved.isSolved)
-				setStatus('ready')
-			}
-		})
-	}, [discardStaleSession, host.initialDaily, publishDaily])
-
 	const showToast = useCallback((message: string) => {
 		if (toastTimerRef.current) clearTimeout(toastTimerRef.current)
 		setToastMessage(message)
@@ -242,6 +246,45 @@ export function useDailyGame(host: DailyHost): DailyController {
 			toastTimerRef.current = null
 		}, 2200)
 	}, [])
+
+	const puzzleHelp = usePuzzleHelpUi({
+		mode: 'daily',
+		getDifficulty: () => difficultyRef.current,
+		getBoard: () => boardRef.current,
+		getOriginalBoard: () => originalBoardRef.current,
+		getMoveHistory: () => moveHistoryRef.current,
+		isPuzzleSolved: () => isPuzzleSolvedRef.current,
+		showToast,
+		onHintMove: (move) => {
+			setSelectedTube(null)
+			setHintMove(move)
+			attemptRef.current = { ...attemptRef.current, usedHint: true }
+			setAttempt(attemptRef.current)
+			hostRef.current.setStatistics(
+				recordHintUsed(hostRef.current.getStatistics()),
+			)
+			trackEvent('hint_used', {
+				difficulty: difficultyRef.current,
+			})
+			setHintMessage('Перелейте отсюда → сюда')
+		},
+		onBoardsAssisted: ({
+			currentBoard: nextBoard,
+			moveHistory: nextHistory,
+			restartBoard,
+		}) => {
+			setCurrentBoard(nextBoard)
+			setMoveHistory(nextHistory)
+			setInitialBoard(restartBoard)
+			setSelectedTube(null)
+			setHintMove(null)
+			setHintMessage(null)
+		},
+	})
+	const puzzleHelpRef = useRef(puzzleHelp)
+	useEffect(() => {
+		puzzleHelpRef.current = puzzleHelp
+	}, [puzzleHelp])
 
 	const flashInvalid = useCallback((tubeIndex: number) => {
 		void hapticInvalid(hostRef.current.getSettings().hapticsEnabled)
@@ -318,14 +361,17 @@ export function useDailyGame(host: DailyHost): DailyController {
 				moveCount?: number
 				attempt?: AttemptFlags
 				isSolved?: boolean
+				help?: PuzzleHelpState
 			},
 		) => {
 			clearPourAnimation()
 			completionLockRef.current = Boolean(options?.isSolved)
-			const start = cloneBoard(board)
+			const original = cloneBoard(board)
+			const nextHelp = options?.help ?? createInitialPuzzleHelpState()
+			const restartBase = buildRestartBoard(original, nextHelp.extraTubeGranted)
 			const current = options?.currentBoard
 				? cloneBoard(options.currentBoard)
-				: cloneBoard(start)
+				: cloneBoard(restartBase)
 			const nextAttempt = options?.attempt
 				? { ...options.attempt }
 				: createFreshAttemptFlags()
@@ -334,7 +380,8 @@ export function useDailyGame(host: DailyHost): DailyController {
 			setTodayKey(dateKey)
 			setDifficulty(nextDifficulty)
 			setSeed(nextSeed)
-			setInitialBoard(start)
+			setOriginalBoard(original)
+			setInitialBoard(restartBase)
 			setCurrentBoard(current)
 			setMoveHistory(
 				options?.moveHistory ? options.moveHistory.map(cloneBoard) : [],
@@ -345,9 +392,37 @@ export function useDailyGame(host: DailyHost): DailyController {
 			setHintMessage(null)
 			setIsPuzzleSolved(options?.isSolved ?? isSolved(current))
 			setStatus('ready')
+			puzzleHelpRef.current.restoreHelp(nextHelp)
 		},
 		[clearPourAnimation],
 	)
+
+	useEffect(() => {
+		if (hydratedFromStorageRef.current) return
+		hydratedFromStorageRef.current = true
+		const key = localDateKey(nowRef.current())
+		queueMicrotask(() => {
+			setTodayKey(key)
+			setDifficulty(getDailyDifficulty(key))
+			const normalized = discardStaleSession(host.initialDaily, key)
+			if (normalized !== host.initialDaily) {
+				publishDaily(normalized)
+			} else {
+				setDailySnapshot(normalized)
+			}
+			const saved = normalized.session
+			if (saved && saved.dateKey === key) {
+				hydratePuzzle(key, saved.difficulty, saved.seed, saved.initialBoard, {
+					currentBoard: saved.currentBoard,
+					moveHistory: saved.moveHistory,
+					moveCount: saved.moveCount,
+					attempt: saved.attempt,
+					isSolved: saved.isSolved,
+					help: saved.help,
+				})
+			}
+		})
+	}, [discardStaleSession, host.initialDaily, hydratePuzzle, publishDaily])
 
 	const generateAndPublish = useCallback(
 		(dateKey: LocalDateKey, fresh: boolean) => {
@@ -371,11 +446,13 @@ export function useDailyGame(host: DailyHost): DailyController {
 			}
 
 			const board = result.level.board
+			const freshHelp = createInitialPuzzleHelpState()
 			hydratePuzzle(dateKey, nextDifficulty, nextSeed, board, {
 				isSolved: false,
 				attempt: createFreshAttemptFlags(),
 				moveCount: 0,
 				moveHistory: [],
+				help: freshHelp,
 			})
 
 			const base = discardStaleSession(hostRef.current.getDaily(), dateKey)
@@ -389,6 +466,7 @@ export function useDailyGame(host: DailyHost): DailyController {
 				moveCount: 0,
 				attempt: createFreshAttemptFlags(),
 				isSolved: false,
+				help: freshHelp,
 			}
 			publishDaily({
 				...base,
@@ -418,6 +496,7 @@ export function useDailyGame(host: DailyHost): DailyController {
 				moveCount: saved.moveCount,
 				attempt: saved.attempt,
 				isSolved: saved.isSolved,
+				help: saved.help,
 			})
 			return
 		}
@@ -429,6 +508,7 @@ export function useDailyGame(host: DailyHost): DailyController {
 				moveCount: saved.moveCount,
 				attempt: saved.attempt,
 				isSolved: true,
+				help: saved.help,
 			})
 			return
 		}
@@ -438,6 +518,7 @@ export function useDailyGame(host: DailyHost): DailyController {
 	const replayToday = useCallback(() => {
 		const key = localDateKey(nowRef.current())
 		setTodayKey(key)
+		// Fresh attempt: generateAndPublish creates new session + initial help.
 		generateAndPublish(key, true)
 	}, [generateAndPublish])
 
@@ -455,29 +536,33 @@ export function useDailyGame(host: DailyHost): DailyController {
 	)
 
 	useEffect(() => {
-		if (status !== 'ready' || !seed || initialBoard.length === 0) return
+		if (status !== 'ready' || !seed || originalBoard.length === 0) return
 		persistLiveSession({
 			dateKey: todayKey,
 			difficulty,
 			seed,
-			initialBoard: cloneBoard(initialBoard),
+			// Persist ORIGINAL board only; restart assistance is derived from help.
+			initialBoard: cloneBoard(originalBoard),
 			currentBoard: cloneBoard(currentBoard),
 			moveHistory: moveHistory.map(cloneBoard),
 			moveCount,
 			attempt: attemptRef.current,
 			isSolved: isPuzzleSolved,
+			help: puzzleHelpRef.current.getHelp(),
 		})
 	}, [
 		status,
 		todayKey,
 		difficulty,
 		seed,
+		originalBoard,
 		initialBoard,
 		currentBoard,
 		moveHistory,
 		moveCount,
 		isPuzzleSolved,
 		attempt,
+		puzzleHelp.help,
 		persistLiveSession,
 	])
 
@@ -637,36 +722,8 @@ export function useDailyGame(host: DailyHost): DailyController {
 	const shouldConfirmRestart = useCallback(() => moveCount > 0, [moveCount])
 
 	const handleHint = useCallback(() => {
-		if (isPuzzleSolved || isSolved(currentBoard)) {
-			showToast('Уровень уже решён')
-			return
-		}
-		try {
-			const move = getHint(currentBoard, {
-				maxStates: 250_000,
-				maxDepth: 250,
-				timeoutMs: 4_000,
-			})
-			if (!move) {
-				showToast('Подсказка недоступна')
-				setHintMove(null)
-				setHintMessage(null)
-				return
-			}
-			setSelectedTube(null)
-			setHintMove(move)
-			attemptRef.current = { ...attemptRef.current, usedHint: true }
-			setAttempt(attemptRef.current)
-			hostRef.current.setStatistics(
-				recordHintUsed(hostRef.current.getStatistics()),
-			)
-			setHintMessage('Перелейте отсюда → сюда')
-		} catch {
-			showToast('Подсказка недоступна')
-			setHintMove(null)
-			setHintMessage(null)
-		}
-	}, [currentBoard, isPuzzleSolved, showToast])
+		puzzleHelp.requestHint()
+	}, [puzzleHelp])
 
 	const todaySession =
 		dailySnapshot.session?.dateKey === todayKey
@@ -713,5 +770,16 @@ export function useDailyGame(host: DailyHost): DailyController {
 		handleRestart,
 		shouldConfirmRestart,
 		handleHint,
+		openHelpSheet: puzzleHelp.openHelpSheet,
+		closeHelpSheet: puzzleHelp.closeHelpSheet,
+		requestExtraTubeOffer: puzzleHelp.requestExtraTubeOffer,
+		confirmHintPack: puzzleHelp.confirmHintPack,
+		confirmExtraTube: puzzleHelp.confirmExtraTube,
+		cancelHelpDialog: puzzleHelp.cancelHelpDialog,
+		help: puzzleHelp.help,
+		helpSheetVisible: puzzleHelp.helpSheetVisible,
+		helpDialog: puzzleHelp.helpDialog,
+		hintSearching: puzzleHelp.hintSearching,
+		rewardLoading: puzzleHelp.rewardLoading,
 	}
 }

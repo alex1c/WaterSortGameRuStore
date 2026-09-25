@@ -13,6 +13,7 @@ import { BannerSlot } from '../components/BannerSlot'
 import { AchievementToast } from '../components/AchievementToast'
 import { GameControls } from '../components/GameControls'
 import { GameHeader } from '../components/GameHeader'
+import { HelpSheet } from '../components/HelpSheet'
 import { TrainingHint } from '../components/TrainingHint'
 import { TubeBoard } from '../components/TubeBoard'
 import { WinModal } from '../components/WinModal'
@@ -123,7 +124,9 @@ export function GameScreen({ onOpenHome, onOpenLevels, onOpenSettings }: GameScr
 					onUndo={game.handleUndo}
 					onHint={game.handleHint}
 					onRestart={requestRestart}
+					onHelp={game.openHelpSheet}
 					canUndo={game.canUndo}
+					showHelpEntry
 				/>
 				<BannerSlot placement="game" testID="ad-banner-game" />
 				<View
@@ -131,6 +134,21 @@ export function GameScreen({ onOpenHome, onOpenLevels, onOpenSettings }: GameScr
 					testID="bottom-safe-area-spacer"
 				/>
 			</View>
+
+			<HelpSheet
+				visible={game.helpSheetVisible}
+				dialog={game.helpDialog}
+				help={game.help}
+				isSolved={game.isLevelSolved}
+				hintSearching={game.hintSearching}
+				rewardLoading={game.rewardLoading}
+				onClose={game.closeHelpSheet}
+				onRequestHint={game.handleHint}
+				onRequestExtraTube={game.requestExtraTubeOffer}
+				onConfirmHintPack={game.confirmHintPack}
+				onConfirmExtraTube={game.confirmExtraTube}
+				onCancelDialog={game.cancelHelpDialog}
+			/>
 
 			<WinModal
 				visible={game.isLevelSolved && !game.showCampaignFinished}

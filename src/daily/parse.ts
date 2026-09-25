@@ -1,5 +1,6 @@
 import { isValidBoard } from '../game/core'
 import type { Board } from '../game/types'
+import { parsePuzzleHelpState } from '../help'
 import { parseAttemptFlags } from '../statistics'
 import {
 	isValidLocalDateKey,
@@ -105,6 +106,8 @@ export function parseDailySession(
 		moveCount: Math.floor(record.moveCount),
 		attempt: parseAttemptFlags(record.attempt),
 		isSolved: record.isSolved === true,
+		// Corrupt/missing help → defaults; do not invent prior rewarded grants.
+		help: parsePuzzleHelpState(record.help),
 	}
 }
 

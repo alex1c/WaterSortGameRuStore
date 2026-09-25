@@ -14,6 +14,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { BannerSlot } from '../components/BannerSlot'
 import { AchievementToast } from '../components/AchievementToast'
 import { GameControls } from '../components/GameControls'
+import { HelpSheet } from '../components/HelpSheet'
 import { TubeBoard } from '../components/TubeBoard'
 import { useSharedCampaignGame } from '../hooks/CampaignGameContext'
 import { pluralDays } from './DailyScreen'
@@ -174,13 +175,30 @@ export function DailyGameScreen({
 					onUndo={daily.handleUndo}
 					onHint={daily.handleHint}
 					onRestart={requestRestart}
+					onHelp={daily.openHelpSheet}
 					canUndo={daily.canUndo}
+					showHelpEntry
 				/>
 				<BannerSlot placement="game" testID="ad-banner-game" />
 				<View
 					style={{ height: insets.bottom, backgroundColor: uiColors.surfaceMuted }}
 				/>
 			</View>
+
+			<HelpSheet
+				visible={daily.helpSheetVisible}
+				dialog={daily.helpDialog}
+				help={daily.help}
+				isSolved={daily.isSolved}
+				hintSearching={daily.hintSearching}
+				rewardLoading={daily.rewardLoading}
+				onClose={daily.closeHelpSheet}
+				onRequestHint={daily.handleHint}
+				onRequestExtraTube={daily.requestExtraTubeOffer}
+				onConfirmHintPack={daily.confirmHintPack}
+				onConfirmExtraTube={daily.confirmExtraTube}
+				onCancelDialog={daily.cancelHelpDialog}
+			/>
 
 			<Modal visible={daily.isSolved} transparent animationType="fade">
 				<View style={styles.winBackdrop} testID="daily-win-modal">

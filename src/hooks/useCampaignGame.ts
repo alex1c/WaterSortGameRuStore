@@ -30,11 +30,16 @@ import {
 	applyMove,
 	canPour,
 	cloneBoard,
-	getHint,
 	isSolved,
 	type Board,
 	type Move,
 } from '../game'
+import {
+	createInitialPuzzleHelpState,
+	buildRestartBoard,
+	type PuzzleHelpState,
+} from '../help'
+import { usePuzzleHelpUi } from './usePuzzleHelpUi'
 import {
 	DEFAULT_GAME_SETTINGS,
 	getPourAnimationMs,
@@ -122,6 +127,20 @@ export interface CampaignGameController {
 	handleRestart: () => void
 	shouldConfirmRestart: () => boolean
 	handleHint: () => void
+	openHelpSheet: () => void
+	closeHelpSheet: () => void
+	requestExtraTubeOffer: () => void
+	confirmHintPack: () => void
+	confirmExtraTube: () => void
+	cancelHelpDialog: () => void
+	help: PuzzleHelpState
+	helpSheetVisible: boolean
+	helpDialog: import('../components/HelpSheet').HelpDialogKind
+	hintSearching: boolean
+	rewardLoading: boolean
+	freePlayDiscoveryVisible: boolean
+	acknowledgeFreePlayDiscovery: (opened: boolean) => void
+	maybeShowFreePlayDiscovery: () => void
 	handleNextLevel: () => void
 	handleReplayLevel: () => void
 	openLevel: (levelNumber: number) => void
@@ -148,6 +167,9 @@ export function useCampaignGame(): CampaignGameController {
 	const [difficultyBand, setDifficultyBand] =
 		useState<CampaignDifficultyBand>('BEGINNER')
 	const [seed, setSeed] = useState('watersort-campaign-v1-level-1')
+	/** Original generated board — campaign identity freeze; never gains extra tube. */
+	const [originalBoard, setOriginalBoard] = useState<Board>([])
+	/** Restart target (original + optional rewarded empty tube). */
 	const [initialBoard, setInitialBoard] = useState<Board>([])
 	const [currentBoard, setCurrentBoard] = useState<Board>([])
 	const [moveHistory, setMoveHistory] = useState<Board[]>([])
@@ -161,6 +183,8 @@ export function useCampaignGame(): CampaignGameController {
 	const [toastMessage, setToastMessage] = useState<string | null>(null)
 	const [isLevelSolved, setIsLevelSolved] = useState(false)
 	const [attempt, setAttempt] = useState<AttemptFlags>(createFreshAttemptFlags)
+	const [freePlayDiscoveryShown, setFreePlayDiscoveryShown] = useState(false)
+	const [freePlayDiscoveryVisible, setFreePlayDiscoveryVisible] = useState(false)
 
 	const flashTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 	const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -169,6 +193,7 @@ export function useCampaignGame(): CampaignGameController {
 	const tutorialCompletedRef = useRef(false)
 	const highestUnlockedRef = useRef(1)
 	const campaignCompleteRef = useRef(false)
+	const freePlayDiscoveryShownRef = useRef(false)
 	const settingsRef = useRef<GameSettings>({ ...DEFAULT_GAME_SETTINGS })
 	const statisticsRef = useRef<GameStatistics>(createEmptyStatistics())
 	const achievementsRef = useRef<AchievementState>(createEmptyAchievementState())
@@ -186,6 +211,20 @@ export function useCampaignGame(): CampaignGameController {
 	)
 	const [dailyTick, setDailyTick] = useState(0)
 
+	const boardRef = useRef<Board>([])
+	const originalBoardRef = useRef<Board>([])
+	const moveHistoryRef = useRef<Board[]>([])
+	const isLevelSolvedRef = useRef(false)
+	const difficultyBandRef = useRef<CampaignDifficultyBand>('BEGINNER')
+
+	useEffect(() => {
+		boardRef.current = currentBoard
+		originalBoardRef.current = originalBoard
+		moveHistoryRef.current = moveHistory
+		isLevelSolvedRef.current = isLevelSolved
+		difficultyBandRef.current = difficultyBand
+	}, [currentBoard, originalBoard, moveHistory, isLevelSolved, difficultyBand])
+
 	const showToast = useCallback((message: string) => {
 		if (toastTimerRef.current) clearTimeout(toastTimerRef.current)
 		setToastMessage(message)
@@ -194,6 +233,42 @@ export function useCampaignGame(): CampaignGameController {
 			toastTimerRef.current = null
 		}, 2200)
 	}, [])
+
+	const puzzleHelp = usePuzzleHelpUi({
+		mode: 'campaign',
+		getDifficulty: () => difficultyBandRef.current,
+		getBoard: () => boardRef.current,
+		getOriginalBoard: () => originalBoardRef.current,
+		getMoveHistory: () => moveHistoryRef.current,
+		isPuzzleSolved: () => isLevelSolvedRef.current,
+		showToast,
+		onHintMove: (move) => {
+			setSelectedTube(null)
+			setHintMove(move)
+			attemptRef.current = { ...attemptRef.current, usedHint: true }
+			setAttempt(attemptRef.current)
+			const nextStats = recordHintUsed(statisticsRef.current)
+			statisticsRef.current = nextStats
+			setStatistics(nextStats)
+			trackEvent('hint_used', {
+				level_number: levelNumber,
+				difficulty: difficultyBandRef.current,
+			})
+			setHintMessage('Перелейте отсюда → сюда')
+		},
+		onBoardsAssisted: ({ currentBoard: nextBoard, moveHistory: nextHistory, restartBoard }) => {
+			setCurrentBoard(nextBoard)
+			setMoveHistory(nextHistory)
+			setInitialBoard(restartBoard)
+			setSelectedTube(null)
+			setHintMove(null)
+			setHintMessage(null)
+		},
+	})
+	const puzzleHelpRef = useRef(puzzleHelp)
+	useEffect(() => {
+		puzzleHelpRef.current = puzzleHelp
+	}, [puzzleHelp])
 
 	const flashInvalid = useCallback((tubeIndex: number) => {
 		void hapticInvalid(settingsRef.current.hapticsEnabled)
@@ -269,12 +344,20 @@ export function useCampaignGame(): CampaignGameController {
 				moveCount?: number
 				tutorialDone?: boolean
 				attempt?: AttemptFlags
+				help?: PuzzleHelpState
+				/** When true, treat as a fresh puzzle identity (replay / next level). */
+				freshHelp?: boolean
 			},
 		) => {
-			const start = cloneBoard(level.board)
+			const original = cloneBoard(level.board)
+			const nextHelp =
+				options?.freshHelp || !options?.help
+					? createInitialPuzzleHelpState()
+					: options.help
+			const restartBase = buildRestartBoard(original, nextHelp.extraTubeGranted)
 			const board = options?.currentBoard
 				? cloneBoard(options.currentBoard)
-				: cloneBoard(start)
+				: cloneBoard(restartBase)
 			const moves = options?.moveCount ?? 0
 			const tutorialDone = options?.tutorialDone ?? tutorialCompletedRef.current
 			const nextAttempt = options?.attempt
@@ -288,7 +371,8 @@ export function useCampaignGame(): CampaignGameController {
 			setLevelNumber(level.levelNumber)
 			setDifficultyBand(level.campaignBand)
 			setSeed(String(level.seed))
-			setInitialBoard(start)
+			setOriginalBoard(original)
+			setInitialBoard(restartBase)
 			setCurrentBoard(board)
 			setMoveHistory(options?.moveHistory ? options.moveHistory.map(cloneBoard) : [])
 			setMoveCount(moves)
@@ -297,6 +381,7 @@ export function useCampaignGame(): CampaignGameController {
 			setHintMessage(null)
 			setIsLevelSolved(isSolved(board))
 			setShowCampaignFinished(false)
+			puzzleHelpRef.current.restoreHelp(nextHelp)
 
 			if (level.levelNumber === 1 && !tutorialDone) {
 				setTrainingStep(moves > 0 ? 'encourage' : 'pick-source')
@@ -321,6 +406,7 @@ export function useCampaignGame(): CampaignGameController {
 			highestUnlockedRef.current = saved.highestUnlockedLevel
 			campaignCompleteRef.current = saved.campaignComplete
 			tutorialCompletedRef.current = saved.tutorialCompleted
+			freePlayDiscoveryShownRef.current = saved.freePlayDiscoveryShown
 			settingsRef.current = saved.settings
 			statisticsRef.current = saved.statistics
 			achievementsRef.current = saved.achievements
@@ -332,6 +418,7 @@ export function useCampaignGame(): CampaignGameController {
 			setHighestUnlockedLevel(saved.highestUnlockedLevel)
 			setCampaignComplete(saved.campaignComplete)
 			setTutorialCompleted(saved.tutorialCompleted)
+			setFreePlayDiscoveryShown(saved.freePlayDiscoveryShown)
 			setSettings(saved.settings)
 			setStatistics(saved.statistics)
 			setAchievements(saved.achievements)
@@ -350,9 +437,22 @@ export function useCampaignGame(): CampaignGameController {
 					moveCount: saved.session.moveCount,
 					tutorialDone: saved.tutorialCompleted,
 					attempt: saved.session.attempt,
+					help: saved.session.help,
 				})
 			} else {
-				hydrateLevel(level, { tutorialDone: saved.tutorialCompleted })
+				hydrateLevel(level, {
+					tutorialDone: saved.tutorialCompleted,
+					freshHelp: true,
+				})
+			}
+
+			// Migrated users past Level 5 may see discovery once on Home.
+			if (
+				!saved.freePlayDiscoveryShown &&
+				saved.highestUnlockedLevel > 5 &&
+				saved.tutorialCompleted
+			) {
+				// Eligible — shown when Home opens via maybeShowFreePlayDiscovery.
 			}
 
 			setReady(true)
@@ -364,7 +464,7 @@ export function useCampaignGame(): CampaignGameController {
 	}, [hydrateLevel, queueAchievementToasts])
 
 	useEffect(() => {
-		if (!ready || !persistEnabledRef.current || initialBoard.length === 0) {
+		if (!ready || !persistEnabledRef.current || originalBoard.length === 0) {
 			return
 		}
 		void savePersistedGameState({
@@ -378,15 +478,17 @@ export function useCampaignGame(): CampaignGameController {
 			achievements: achievementsRef.current,
 			freePlay: freePlayRef.current,
 			daily: dailyRef.current,
+			freePlayDiscoveryShown: freePlayDiscoveryShownRef.current,
 			session: {
 				levelNumber,
 				seed,
 				campaignBand: difficultyBand,
-				initialBoard: cloneBoard(initialBoard),
+				initialBoard: cloneBoard(originalBoard),
 				currentBoard: cloneBoard(currentBoard),
 				moveHistory: moveHistory.map(cloneBoard),
 				moveCount,
 				attempt: attemptRef.current,
+				help: puzzleHelpRef.current.getHelp(),
 			},
 		})
 	}, [
@@ -394,6 +496,7 @@ export function useCampaignGame(): CampaignGameController {
 		levelNumber,
 		seed,
 		difficultyBand,
+		originalBoard,
 		initialBoard,
 		currentBoard,
 		moveHistory,
@@ -407,6 +510,8 @@ export function useCampaignGame(): CampaignGameController {
 		attempt,
 		freePlayTick,
 		dailyTick,
+		puzzleHelp.help,
+		freePlayDiscoveryShown,
 	])
 
 	const updateSettings = useCallback((patch: Partial<GameSettings>) => {
@@ -538,6 +643,13 @@ export function useCampaignGame(): CampaignGameController {
 					setTutorialCompleted(true)
 					setTrainingStep('done')
 				}
+				// After Level 5, discovery becomes eligible (shown once on Home).
+				if (
+					levelNumber === 5 &&
+					!freePlayDiscoveryShownRef.current
+				) {
+					// Defer until Home — do not cover the win celebration.
+				}
 				if (levelNumber === CAMPAIGN_LEVEL_COUNT) {
 					trackEvent('campaign_completed', {
 						level_number: CAMPAIGN_LEVEL_COUNT,
@@ -560,6 +672,34 @@ export function useCampaignGame(): CampaignGameController {
 			trainingStep,
 		],
 	)
+
+	const maybeShowFreePlayDiscovery = useCallback(() => {
+		if (freePlayDiscoveryShownRef.current) return
+		if (!tutorialCompletedRef.current) return
+		if (highestUnlockedRef.current <= 5) return
+		// Users who already opened Free Play do not need the educational prompt.
+		if (
+			freePlayRef.current.seedCounter > 0 ||
+			freePlayRef.current.session !== null
+		) {
+			freePlayDiscoveryShownRef.current = true
+			setFreePlayDiscoveryShown(true)
+			return
+		}
+		freePlayDiscoveryShownRef.current = true
+		setFreePlayDiscoveryShown(true)
+		setFreePlayDiscoveryVisible(true)
+		trackEvent('free_play_discovery_shown')
+	}, [])
+
+	const acknowledgeFreePlayDiscovery = useCallback((opened: boolean) => {
+		setFreePlayDiscoveryVisible(false)
+		freePlayDiscoveryShownRef.current = true
+		setFreePlayDiscoveryShown(true)
+		if (opened) {
+			trackEvent('free_play_discovery_opened')
+		}
+	}, [])
 
 	const handleUndo = useCallback(() => {
 		if (animatingRef.current) clearPourAnimation()
@@ -620,40 +760,8 @@ export function useCampaignGame(): CampaignGameController {
 	}, [levelNumber, moveCount])
 
 	const handleHint = useCallback(() => {
-		if (isLevelSolved || isSolved(currentBoard)) {
-			showToast('Уровень уже решён')
-			return
-		}
-		try {
-			const move = getHint(currentBoard, {
-				maxStates: 250_000,
-				maxDepth: 250,
-				timeoutMs: 4_000,
-			})
-			if (!move) {
-				showToast('Подсказка недоступна')
-				setHintMove(null)
-				setHintMessage(null)
-				return
-			}
-			setSelectedTube(null)
-			setHintMove(move)
-			attemptRef.current = { ...attemptRef.current, usedHint: true }
-			setAttempt(attemptRef.current)
-			const nextStats = recordHintUsed(statisticsRef.current)
-			statisticsRef.current = nextStats
-			setStatistics(nextStats)
-			trackEvent('hint_used', {
-				level_number: levelNumber,
-				difficulty: difficultyBand,
-			})
-			setHintMessage('Перелейте отсюда → сюда')
-		} catch {
-			showToast('Подсказка недоступна')
-			setHintMove(null)
-			setHintMessage(null)
-		}
-	}, [currentBoard, difficultyBand, isLevelSolved, levelNumber, showToast])
+		puzzleHelp.requestHint()
+	}, [puzzleHelp])
 
 	const openLevel = useCallback(
 		(targetLevel: number) => {
@@ -663,7 +771,10 @@ export function useCampaignGame(): CampaignGameController {
 			}
 			const level = createCampaignLevel(targetLevel)
 			trackEvent('level_selected', { level_number: targetLevel })
-			hydrateLevel(level, { tutorialDone: tutorialCompletedRef.current })
+			hydrateLevel(level, {
+				tutorialDone: tutorialCompletedRef.current,
+				freshHelp: true,
+			})
 		},
 		[hydrateLevel, showToast],
 	)
@@ -794,6 +905,20 @@ export function useCampaignGame(): CampaignGameController {
 		handleRestart,
 		shouldConfirmRestart,
 		handleHint,
+		openHelpSheet: puzzleHelp.openHelpSheet,
+		closeHelpSheet: puzzleHelp.closeHelpSheet,
+		requestExtraTubeOffer: puzzleHelp.requestExtraTubeOffer,
+		confirmHintPack: puzzleHelp.confirmHintPack,
+		confirmExtraTube: puzzleHelp.confirmExtraTube,
+		cancelHelpDialog: puzzleHelp.cancelHelpDialog,
+		help: puzzleHelp.help,
+		helpSheetVisible: puzzleHelp.helpSheetVisible,
+		helpDialog: puzzleHelp.helpDialog,
+		hintSearching: puzzleHelp.hintSearching,
+		rewardLoading: puzzleHelp.rewardLoading,
+		freePlayDiscoveryVisible,
+		acknowledgeFreePlayDiscovery,
+		maybeShowFreePlayDiscovery,
 		handleNextLevel,
 		handleReplayLevel,
 		openLevel,

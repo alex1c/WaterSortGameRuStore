@@ -1,8 +1,12 @@
 import type { Board } from '../game/types'
+import type { PuzzleHelpState } from '../help'
 import type { AttemptFlags } from '../statistics'
 import type { FreePlayDifficulty } from './config'
 
-/** Persisted Free Play mid-puzzle snapshot (isolated from Campaign). */
+/**
+ * Persisted Free Play mid-puzzle snapshot (isolated from Campaign).
+ * initialBoard stays the ORIGINAL generated board for seed identity.
+ */
 export interface PersistedFreePlaySession {
 	difficulty: FreePlayDifficulty
 	seed: string
@@ -12,6 +16,7 @@ export interface PersistedFreePlaySession {
 	moveCount: number
 	attempt: AttemptFlags
 	isSolved: boolean
+	help: PuzzleHelpState
 }
 
 export interface PersistedFreePlayState {

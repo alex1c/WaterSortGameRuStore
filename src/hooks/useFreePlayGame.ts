@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 
 import {
 	createFreePlayPuzzle,
@@ -12,11 +12,15 @@ import {
 	applyMove,
 	canPour,
 	cloneBoard,
-	getHint,
 	isSolved,
 	type Board,
 	type Move,
 } from '../game'
+import {
+	buildRestartBoard,
+	createInitialPuzzleHelpState,
+	type PuzzleHelpState,
+} from '../help'
 import {
 	getPourAnimationMs,
 	type AnimationSpeed,
@@ -50,6 +54,7 @@ import {
 } from '../feedback'
 import { maybeShowInterstitialAfterLevelCompleted } from '../ads'
 import { trackEvent } from '../analytics'
+import { usePuzzleHelpUi } from './usePuzzleHelpUi'
 
 export interface FreePlayPourAnimation {
 	from: number
@@ -89,6 +94,17 @@ export interface FreePlayController {
 	handleRestart: () => void
 	shouldConfirmRestart: () => boolean
 	handleHint: () => void
+	openHelpSheet: () => void
+	closeHelpSheet: () => void
+	requestExtraTubeOffer: () => void
+	confirmHintPack: () => void
+	confirmExtraTube: () => void
+	cancelHelpDialog: () => void
+	help: PuzzleHelpState
+	helpSheetVisible: boolean
+	helpDialog: import('../components/HelpSheet').HelpDialogKind
+	hintSearching: boolean
+	rewardLoading: boolean
 	startAnotherSameDifficulty: () => void
 }
 
@@ -124,39 +140,42 @@ export function useFreePlayGame(host: FreePlayHost): FreePlayController {
 	const seedCounterRef = useRef(host.initialFreePlay.seedCounter)
 	const hydratedFromStorageRef = useRef(Boolean(host.initialFreePlay.session))
 
+	const bootSession = host.initialFreePlay.session
+	const bootHelp = bootSession?.help ?? createInitialPuzzleHelpState()
+
 	const [status, setStatus] = useState<FreePlayStatus>(() =>
-		host.initialFreePlay.session ? 'ready' : 'idle',
+		bootSession ? 'ready' : 'idle',
 	)
 	const [seedCounter, setSeedCounter] = useState(
 		host.initialFreePlay.seedCounter,
 	)
 	const [sessionMeta, setSessionMeta] = useState<PersistedFreePlaySession | null>(
-		host.initialFreePlay.session,
+		bootSession,
 	)
 	const [difficulty, setDifficulty] = useState<FreePlayDifficulty | null>(
-		host.initialFreePlay.session?.difficulty ?? null,
+		bootSession?.difficulty ?? null,
 	)
-	const [seed, setSeed] = useState<string | null>(
-		host.initialFreePlay.session?.seed ?? null,
+	const [seed, setSeed] = useState<string | null>(bootSession?.seed ?? null)
+	/** Original generated board — Free Play identity freeze; never gains extra tube. */
+	const [originalBoard, setOriginalBoard] = useState<Board>(
+		bootSession ? cloneBoard(bootSession.initialBoard) : [],
 	)
+	/** Restart target (original + optional rewarded empty tube). */
 	const [initialBoard, setInitialBoard] = useState<Board>(
-		host.initialFreePlay.session
-			? cloneBoard(host.initialFreePlay.session.initialBoard)
+		bootSession
+			? buildRestartBoard(
+					cloneBoard(bootSession.initialBoard),
+					bootHelp.extraTubeGranted,
+				)
 			: [],
 	)
 	const [currentBoard, setCurrentBoard] = useState<Board>(
-		host.initialFreePlay.session
-			? cloneBoard(host.initialFreePlay.session.currentBoard)
-			: [],
+		bootSession ? cloneBoard(bootSession.currentBoard) : [],
 	)
 	const [moveHistory, setMoveHistory] = useState<Board[]>(
-		host.initialFreePlay.session
-			? host.initialFreePlay.session.moveHistory.map(cloneBoard)
-			: [],
+		bootSession ? bootSession.moveHistory.map(cloneBoard) : [],
 	)
-	const [moveCount, setMoveCount] = useState(
-		host.initialFreePlay.session?.moveCount ?? 0,
-	)
+	const [moveCount, setMoveCount] = useState(bootSession?.moveCount ?? 0)
 	const [selectedTube, setSelectedTube] = useState<number | null>(null)
 	const [hintMove, setHintMove] = useState<Move | null>(null)
 	const [hintMessage, setHintMessage] = useState<string | null>(null)
@@ -164,14 +183,28 @@ export function useFreePlayGame(host: FreePlayHost): FreePlayController {
 	const [pourAnimation, setPourAnimation] =
 		useState<FreePlayPourAnimation | null>(null)
 	const [isPuzzleSolved, setIsPuzzleSolved] = useState(
-		host.initialFreePlay.session?.isSolved ?? false,
+		bootSession?.isSolved ?? false,
 	)
 	const [attempt, setAttempt] = useState<AttemptFlags>(
-		host.initialFreePlay.session?.attempt ?? createFreshAttemptFlags(),
+		bootSession?.attempt ?? createFreshAttemptFlags(),
 	)
 	const [toastMessage, setToastMessage] = useState<string | null>(null)
 	const [pendingAchievementToast, setPendingAchievementToast] =
 		useState<AchievementId | null>(null)
+
+	const boardRef = useRef<Board>([])
+	const originalBoardRef = useRef<Board>([])
+	const moveHistoryRef = useRef<Board[]>([])
+	const isPuzzleSolvedRef = useRef(false)
+	const difficultyRef = useRef<FreePlayDifficulty | null>(null)
+
+	useEffect(() => {
+		boardRef.current = currentBoard
+		originalBoardRef.current = originalBoard
+		moveHistoryRef.current = moveHistory
+		isPuzzleSolvedRef.current = isPuzzleSolved
+		difficultyRef.current = difficulty
+	}, [currentBoard, originalBoard, moveHistory, isPuzzleSolved, difficulty])
 
 	useEffect(() => {
 		hostRef.current = host
@@ -185,29 +218,6 @@ export function useFreePlayGame(host: FreePlayHost): FreePlayController {
 		seedCounterRef.current = seedCounter
 	}, [seedCounter])
 
-	useEffect(() => {
-		if (hydratedFromStorageRef.current) return
-		const saved = host.initialFreePlay.session
-		if (!saved) return
-		hydratedFromStorageRef.current = true
-		/* One-shot AsyncStorage hydrate into Free Play local state. */
-		queueMicrotask(() => {
-			setSessionMeta(saved)
-			setSeedCounter(host.initialFreePlay.seedCounter)
-			seedCounterRef.current = host.initialFreePlay.seedCounter
-			setDifficulty(saved.difficulty)
-			setSeed(saved.seed)
-			setInitialBoard(cloneBoard(saved.initialBoard))
-			setCurrentBoard(cloneBoard(saved.currentBoard))
-			setMoveHistory(saved.moveHistory.map(cloneBoard))
-			setMoveCount(saved.moveCount)
-			setAttempt(saved.attempt)
-			attemptRef.current = saved.attempt
-			setIsPuzzleSolved(saved.isSolved)
-			setStatus('ready')
-		})
-	}, [host.initialFreePlay])
-
 	const showToast = useCallback((message: string) => {
 		if (toastTimerRef.current) clearTimeout(toastTimerRef.current)
 		setToastMessage(message)
@@ -216,6 +226,45 @@ export function useFreePlayGame(host: FreePlayHost): FreePlayController {
 			toastTimerRef.current = null
 		}, 2200)
 	}, [])
+
+	const puzzleHelp = usePuzzleHelpUi({
+		mode: 'free_play',
+		getDifficulty: () => difficultyRef.current ?? 'MEDIUM',
+		getBoard: () => boardRef.current,
+		getOriginalBoard: () => originalBoardRef.current,
+		getMoveHistory: () => moveHistoryRef.current,
+		isPuzzleSolved: () => isPuzzleSolvedRef.current,
+		showToast,
+		onHintMove: (move) => {
+			setSelectedTube(null)
+			setHintMove(move)
+			attemptRef.current = { ...attemptRef.current, usedHint: true }
+			setAttempt(attemptRef.current)
+			hostRef.current.setStatistics(
+				recordHintUsed(hostRef.current.getStatistics()),
+			)
+			trackEvent('hint_used', {
+				difficulty: difficultyRef.current ?? 'MEDIUM',
+			})
+			setHintMessage('Перелейте отсюда → сюда')
+		},
+		onBoardsAssisted: ({
+			currentBoard: nextBoard,
+			moveHistory: nextHistory,
+			restartBoard,
+		}) => {
+			setCurrentBoard(nextBoard)
+			setMoveHistory(nextHistory)
+			setInitialBoard(restartBoard)
+			setSelectedTube(null)
+			setHintMove(null)
+			setHintMessage(null)
+		},
+	})
+	const puzzleHelpRef = useRef(puzzleHelp)
+	useEffect(() => {
+		puzzleHelpRef.current = puzzleHelp
+	}, [puzzleHelp])
 
 	const flashInvalid = useCallback((tubeIndex: number) => {
 		void hapticInvalid(hostRef.current.getSettings().hapticsEnabled)
@@ -305,14 +354,17 @@ export function useFreePlayGame(host: FreePlayHost): FreePlayController {
 				moveCount?: number
 				attempt?: AttemptFlags
 				isSolved?: boolean
+				help?: PuzzleHelpState
 			},
 		) => {
 			clearPourAnimation()
 			completionLockRef.current = false
-			const start = cloneBoard(board)
+			const original = cloneBoard(board)
+			const nextHelp = options?.help ?? createInitialPuzzleHelpState()
+			const restartBase = buildRestartBoard(original, nextHelp.extraTubeGranted)
 			const current = options?.currentBoard
 				? cloneBoard(options.currentBoard)
-				: cloneBoard(start)
+				: cloneBoard(restartBase)
 			const nextAttempt = options?.attempt
 				? { ...options.attempt }
 				: createFreshAttemptFlags()
@@ -320,7 +372,8 @@ export function useFreePlayGame(host: FreePlayHost): FreePlayController {
 			setAttempt(nextAttempt)
 			setDifficulty(nextDifficulty)
 			setSeed(nextSeed)
-			setInitialBoard(start)
+			setOriginalBoard(original)
+			setInitialBoard(restartBase)
 			setCurrentBoard(current)
 			setMoveHistory(
 				options?.moveHistory ? options.moveHistory.map(cloneBoard) : [],
@@ -331,9 +384,38 @@ export function useFreePlayGame(host: FreePlayHost): FreePlayController {
 			setHintMessage(null)
 			setIsPuzzleSolved(options?.isSolved ?? isSolved(current))
 			setStatus('ready')
+			puzzleHelpRef.current.restoreHelp(nextHelp)
 		},
 		[clearPourAnimation],
 	)
+
+	// Sync boot already hydrated boards from useState; restore help before persist.
+	useLayoutEffect(() => {
+		const saved = host.initialFreePlay.session
+		if (!saved || !hydratedFromStorageRef.current) return
+		puzzleHelpRef.current.restoreHelp(saved.help)
+	}, [host.initialFreePlay.session])
+
+	useEffect(() => {
+		if (hydratedFromStorageRef.current) return
+		const saved = host.initialFreePlay.session
+		if (!saved) return
+		hydratedFromStorageRef.current = true
+		/* One-shot AsyncStorage hydrate into Free Play local state. */
+		queueMicrotask(() => {
+			setSessionMeta(saved)
+			setSeedCounter(host.initialFreePlay.seedCounter)
+			seedCounterRef.current = host.initialFreePlay.seedCounter
+			hydratePuzzle(saved.difficulty, saved.seed, saved.initialBoard, {
+				currentBoard: saved.currentBoard,
+				moveHistory: saved.moveHistory,
+				moveCount: saved.moveCount,
+				attempt: saved.attempt,
+				isSolved: saved.isSolved,
+				help: saved.help,
+			})
+		})
+	}, [host.initialFreePlay, hydratePuzzle])
 
 	const startNewPuzzle = useCallback(
 		(nextDifficulty: FreePlayDifficulty) => {
@@ -353,7 +435,10 @@ export function useFreePlayGame(host: FreePlayHost): FreePlayController {
 				return
 			}
 
-			hydratePuzzle(nextDifficulty, nextSeed, result.level.board)
+			const freshHelp = createInitialPuzzleHelpState()
+			hydratePuzzle(nextDifficulty, nextSeed, result.level.board, {
+				help: freshHelp,
+			})
 			publishSession(
 				{
 					difficulty: nextDifficulty,
@@ -364,6 +449,7 @@ export function useFreePlayGame(host: FreePlayHost): FreePlayController {
 					moveCount: 0,
 					attempt: createFreshAttemptFlags(),
 					isSolved: false,
+					help: freshHelp,
 				},
 				nextCounter,
 			)
@@ -380,6 +466,7 @@ export function useFreePlayGame(host: FreePlayHost): FreePlayController {
 			moveCount: saved.moveCount,
 			attempt: saved.attempt,
 			isSolved: saved.isSolved,
+			help: saved.help,
 		})
 		return true
 	}, [hydratePuzzle])
@@ -388,12 +475,14 @@ export function useFreePlayGame(host: FreePlayHost): FreePlayController {
 		publishSession(null, seedCounterRef.current)
 		setDifficulty(null)
 		setSeed(null)
+		setOriginalBoard([])
 		setInitialBoard([])
 		setCurrentBoard([])
 		setMoveHistory([])
 		setMoveCount(0)
 		setIsPuzzleSolved(false)
 		setStatus('idle')
+		puzzleHelpRef.current.resetHelp()
 	}, [publishSession])
 
 	const persistLiveSession = useCallback(
@@ -406,29 +495,38 @@ export function useFreePlayGame(host: FreePlayHost): FreePlayController {
 	)
 
 	useEffect(() => {
-		if (status !== 'ready' || !difficulty || !seed || initialBoard.length === 0) {
+		if (
+			status !== 'ready' ||
+			!difficulty ||
+			!seed ||
+			originalBoard.length === 0
+		) {
 			return
 		}
 		persistLiveSession({
 			difficulty,
 			seed,
-			initialBoard: cloneBoard(initialBoard),
+			// Persist ORIGINAL board only; restart assistance is derived from help.
+			initialBoard: cloneBoard(originalBoard),
 			currentBoard: cloneBoard(currentBoard),
 			moveHistory: moveHistory.map(cloneBoard),
 			moveCount,
 			attempt: attemptRef.current,
 			isSolved: isPuzzleSolved,
+			help: puzzleHelpRef.current.getHelp(),
 		})
 	}, [
 		status,
 		difficulty,
 		seed,
+		originalBoard,
 		initialBoard,
 		currentBoard,
 		moveHistory,
 		moveCount,
 		isPuzzleSolved,
 		attempt,
+		puzzleHelp.help,
 		persistLiveSession,
 	])
 
@@ -576,36 +674,8 @@ export function useFreePlayGame(host: FreePlayHost): FreePlayController {
 	const shouldConfirmRestart = useCallback(() => moveCount > 0, [moveCount])
 
 	const handleHint = useCallback(() => {
-		if (isPuzzleSolved || isSolved(currentBoard)) {
-			showToast('Уровень уже решён')
-			return
-		}
-		try {
-			const move = getHint(currentBoard, {
-				maxStates: 250_000,
-				maxDepth: 250,
-				timeoutMs: 4_000,
-			})
-			if (!move) {
-				showToast('Подсказка недоступна')
-				setHintMove(null)
-				setHintMessage(null)
-				return
-			}
-			setSelectedTube(null)
-			setHintMove(move)
-			attemptRef.current = { ...attemptRef.current, usedHint: true }
-			setAttempt(attemptRef.current)
-			hostRef.current.setStatistics(
-				recordHintUsed(hostRef.current.getStatistics()),
-			)
-			setHintMessage('Перелейте отсюда → сюда')
-		} catch {
-			showToast('Подсказка недоступна')
-			setHintMove(null)
-			setHintMessage(null)
-		}
-	}, [currentBoard, isPuzzleSolved, showToast])
+		puzzleHelp.requestHint()
+	}, [puzzleHelp])
 
 	const startAnotherSameDifficulty = useCallback(() => {
 		if (!difficulty) return
@@ -645,6 +715,17 @@ export function useFreePlayGame(host: FreePlayHost): FreePlayController {
 		handleRestart,
 		shouldConfirmRestart,
 		handleHint,
+		openHelpSheet: puzzleHelp.openHelpSheet,
+		closeHelpSheet: puzzleHelp.closeHelpSheet,
+		requestExtraTubeOffer: puzzleHelp.requestExtraTubeOffer,
+		confirmHintPack: puzzleHelp.confirmHintPack,
+		confirmExtraTube: puzzleHelp.confirmExtraTube,
+		cancelHelpDialog: puzzleHelp.cancelHelpDialog,
+		help: puzzleHelp.help,
+		helpSheetVisible: puzzleHelp.helpSheetVisible,
+		helpDialog: puzzleHelp.helpDialog,
+		hintSearching: puzzleHelp.hintSearching,
+		rewardLoading: puzzleHelp.rewardLoading,
 		startAnotherSameDifficulty,
 	}
 }

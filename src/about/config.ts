@@ -10,3 +10,10 @@ export const ABOUT_OTHER_APPS_URL =
 	'https://www.rustore.ru/catalog/developer/pw0k858f'
 export const ABOUT_PRIVACY_URL =
 	'https://alex1c.github.io/WaterSortGameRuStore/'
+
+/**
+ * Single product version source for About UI.
+ * Keep in sync with package.json / app.json expo.version (currently 1.0.0).
+ * Do not bump here during PH10 — release engineering owns version bumps.
+ */
+export const APP_VERSION = '1.0.0'

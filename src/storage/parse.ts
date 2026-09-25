@@ -4,6 +4,7 @@ import {
 	CAMPAIGN_LEVEL_COUNT,
 	ORIGINAL_CAMPAIGN_MILESTONE,
 } from '../campaign/config'
+import { parsePuzzleHelpState } from '../help'
 import { parseGameSettings } from '../settings/parse'
 import {
 	parseAttemptFlags,
@@ -26,15 +27,17 @@ import {
 
 /**
  * Pure parser used by tests and the async loader.
- * Accepts schema v1–v6. Never throws.
+ * Accepts schema v1–v7. Never throws.
  *
  * Migration notes:
  * - v3 → v4: old campaignComplete (100-level) unlocks 101, clears complete flag.
  * - v4 → v5: freePlay defaults to empty; Campaign session untouched.
  * - v5 → v6: daily defaults to empty; Campaign / Free Play untouched.
+ * - v6 → v7: help defaults (2 free / 0 rewarded / no tube); discovery false.
  * - Corrupt freePlay subsection → empty Free Play only.
  * - Corrupt daily subsection → empty Daily only.
- * - Historical pours / hint / undo / restart counts are NOT invented.
+ * - Corrupt help subsection → recover help defaults without wiping the puzzle.
+ * - Historical pours / hint / undo / restart / rewarded grants are NOT invented.
  */
 export function parsePersistedGameState(raw: string): PersistedGameState {
 	const fallback = createDefaultPersistedState()
@@ -69,6 +72,7 @@ export function parsePersistedGameState(raw: string): PersistedGameState {
 		const settings = parseGameSettings(record.settings)
 		const freePlay = parseFreePlayState(record.freePlay)
 		const daily = parseDailyState(record.daily)
+		const freePlayDiscoveryShown = record.freePlayDiscoveryShown === true
 
 		// v3 (and earlier) campaignComplete meant the 100-level milestone.
 		if (incomingSchema <= 3 && campaignComplete) {
@@ -108,6 +112,7 @@ export function parsePersistedGameState(raw: string): PersistedGameState {
 			achievements,
 			freePlay,
 			daily,
+			freePlayDiscoveryShown,
 		}
 	} catch {
 		return fallback
@@ -135,6 +140,9 @@ function parseSession(value: unknown): PersistedLevelSession | null {
 		return null
 	}
 
+	// Help recovers independently — corrupt help must not wipe the puzzle.
+	const help = parsePuzzleHelpState(record.help)
+
 	return {
 		levelNumber,
 		seed: record.seed,
@@ -144,6 +152,7 @@ function parseSession(value: unknown): PersistedLevelSession | null {
 		moveHistory: record.moveHistory.map(cloneBoardTree),
 		moveCount: Math.floor(record.moveCount),
 		attempt: parseAttemptFlags(record.attempt),
+		help,
 	}
 }
 

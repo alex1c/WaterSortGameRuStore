@@ -14,6 +14,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { BannerSlot } from '../components/BannerSlot'
 import { AchievementToast } from '../components/AchievementToast'
 import { GameControls } from '../components/GameControls'
+import { HelpSheet } from '../components/HelpSheet'
 import { TubeBoard } from '../components/TubeBoard'
 import { useSharedCampaignGame } from '../hooks/CampaignGameContext'
 import { spacing, uiColors } from '../theme'
@@ -176,13 +177,30 @@ export function FreePlayGameScreen({
 					onUndo={freePlay.handleUndo}
 					onHint={freePlay.handleHint}
 					onRestart={requestRestart}
+					onHelp={freePlay.openHelpSheet}
 					canUndo={freePlay.canUndo}
+					showHelpEntry
 				/>
 				<BannerSlot placement="game" testID="ad-banner-game" />
 				<View
 					style={{ height: insets.bottom, backgroundColor: uiColors.surfaceMuted }}
 				/>
 			</View>
+
+			<HelpSheet
+				visible={freePlay.helpSheetVisible}
+				dialog={freePlay.helpDialog}
+				help={freePlay.help}
+				isSolved={freePlay.isSolved}
+				hintSearching={freePlay.hintSearching}
+				rewardLoading={freePlay.rewardLoading}
+				onClose={freePlay.closeHelpSheet}
+				onRequestHint={freePlay.handleHint}
+				onRequestExtraTube={freePlay.requestExtraTubeOffer}
+				onConfirmHintPack={freePlay.confirmHintPack}
+				onConfirmExtraTube={freePlay.confirmExtraTube}
+				onCancelDialog={freePlay.cancelHelpDialog}
+			/>
 
 			<Modal visible={freePlay.isSolved} transparent animationType="fade">
 				<View style={styles.winBackdrop} testID="free-play-win-modal">

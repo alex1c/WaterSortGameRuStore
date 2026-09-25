@@ -72,7 +72,9 @@ export async function maybeShowInterstitialAfterLevelCompleted(options: {
 			now,
 		}) ||
 		!loadedInterstitial ||
-		interstitialShowing
+		interstitialShowing ||
+		// Avoid stacking interstitial on top of an in-flight rewarded (hint/extra tube).
+		rewardedLoading
 	) {
 		void preloadInterstitial()
 		return false
@@ -94,8 +96,8 @@ export async function maybeShowInterstitialAfterLevelCompleted(options: {
 }
 
 /**
- * Rewarded is intentionally not exposed in the UI in Phase 6. Callers must
- * supply the user-requested reward action; only onAdRewarded can invoke it.
+ * Rewarded ads unlock voluntary help: hint packs and an extra empty tube.
+ * Callers must supply the grant action; only onAdRewarded can invoke it.
  */
 export async function showRewarded(
 	onRewardGranted: () => void,

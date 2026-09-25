@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { StatusBar } from 'expo-status-bar'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
 
+import { FreePlayDiscoveryModal } from './src/components/FreePlayDiscoveryModal'
 import { CampaignGameProvider, useSharedCampaignGame } from './src/hooks/CampaignGameContext'
 import { useAppNavigation } from './src/navigation'
 import { HomeScreen } from './src/screens/HomeScreen'
@@ -49,7 +50,10 @@ function RootNavigation() {
 	const [forceFreePlayChooser, setForceFreePlayChooser] = useState(false)
 
 	useEffect(() => {
-		if (nav.current === 'home') trackEvent('home_opened')
+		if (nav.current === 'home') {
+			trackEvent('home_opened')
+			game.maybeShowFreePlayDiscovery()
+		}
 		if (nav.current === 'statistics') trackEvent('statistics_opened')
 		if (nav.current === 'achievements') trackEvent('achievements_opened')
 		if (nav.current === 'free_play') trackEvent('free_play_opened')
@@ -90,6 +94,10 @@ function RootNavigation() {
 					nav.navigate('game')
 				}}
 				onClose={() => nav.goHome()}
+				onOpenFreePlay={() => {
+					setForceFreePlayChooser(true)
+					nav.navigate('free_play')
+				}}
 			/>
 		)
 	}
@@ -218,29 +226,40 @@ function RootNavigation() {
 	}
 
 	return (
-		<HomeScreen
-			ready={game.ready}
-			continueLevel={game.levelNumber}
-			continueDifficultyLabel={
-				game.ready ? game.difficultyLabel : getDifficultyLabelRu('BEGINNER')
-			}
-			levelsCompleted={game.levelsCompleted}
-			hasMidLevelSession={game.hasMidLevelSession}
-			dailyCompletedToday={game.daily.completedToday}
-			dailyActiveStreak={game.daily.activeStreak}
-			onContinue={() => {
-				game.continueGame()
-				nav.navigate('game')
-			}}
-			onOpenLevels={() => nav.navigate('levels')}
-			onOpenFreePlay={() => {
-				setForceFreePlayChooser(false)
-				nav.navigate('free_play')
-			}}
-			onOpenDaily={() => nav.navigate('daily')}
-			onOpenAchievements={() => nav.navigate('achievements')}
-			onOpenStatistics={() => nav.navigate('statistics')}
-			onOpenSettings={() => nav.navigate('settings')}
-		/>
+		<>
+			<HomeScreen
+				ready={game.ready}
+				continueLevel={game.levelNumber}
+				continueDifficultyLabel={
+					game.ready ? game.difficultyLabel : getDifficultyLabelRu('BEGINNER')
+				}
+				levelsCompleted={game.levelsCompleted}
+				hasMidLevelSession={game.hasMidLevelSession}
+				dailyCompletedToday={game.daily.completedToday}
+				dailyActiveStreak={game.daily.activeStreak}
+				onContinue={() => {
+					game.continueGame()
+					nav.navigate('game')
+				}}
+				onOpenLevels={() => nav.navigate('levels')}
+				onOpenFreePlay={() => {
+					setForceFreePlayChooser(false)
+					nav.navigate('free_play')
+				}}
+				onOpenDaily={() => nav.navigate('daily')}
+				onOpenAchievements={() => nav.navigate('achievements')}
+				onOpenStatistics={() => nav.navigate('statistics')}
+				onOpenSettings={() => nav.navigate('settings')}
+			/>
+			<FreePlayDiscoveryModal
+				visible={game.freePlayDiscoveryVisible}
+				onTry={() => {
+					game.acknowledgeFreePlayDiscovery(true)
+					setForceFreePlayChooser(true)
+					nav.navigate('free_play')
+				}}
+				onLater={() => game.acknowledgeFreePlayDiscovery(false)}
+			/>
+		</>
 	)
 }

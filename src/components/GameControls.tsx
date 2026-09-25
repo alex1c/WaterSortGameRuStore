@@ -6,7 +6,10 @@ interface GameControlsProps {
 	onUndo: () => void
 	onHint: () => void
 	onRestart: () => void
+	onHelp?: () => void
 	canUndo: boolean
+	/** When true, show compact Помощь instead of a bare Подсказка shortcut. */
+	showHelpEntry?: boolean
 }
 
 /**
@@ -17,12 +20,18 @@ export function GameControls({
 	onUndo,
 	onHint,
 	onRestart,
+	onHelp,
 	canUndo,
+	showHelpEntry = false,
 }: GameControlsProps) {
 	return (
 		<View style={styles.row} testID="game-controls">
 			<ControlButton label="Отмена" onPress={onUndo} disabled={!canUndo} />
-			<ControlButton label="Подсказка" onPress={onHint} />
+			{showHelpEntry && onHelp ? (
+				<ControlButton label="Помощь" onPress={onHelp} />
+			) : (
+				<ControlButton label="Подсказка" onPress={onHint} />
+			)}
 			<ControlButton label="Заново" onPress={onRestart} />
 		</View>
 	)

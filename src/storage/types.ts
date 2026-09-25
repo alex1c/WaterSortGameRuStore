@@ -1,6 +1,10 @@
 import type { Board } from '../game/types'
 import type { CampaignDifficultyBand } from '../campaign/config'
 import {
+	createInitialPuzzleHelpState,
+	type PuzzleHelpState,
+} from '../help'
+import {
 	DEFAULT_GAME_SETTINGS,
 	type GameSettings,
 } from '../settings/types'
@@ -23,15 +27,20 @@ import {
 } from '../daily'
 
 /**
- * Schema v6: Daily Puzzle + streak, isolated from Campaign / Free Play.
+ * Schema v7: per-puzzle help (hint credits + extra tube) and Free Play discovery.
+ * Storage key remains watersort.campaign.v1 for continuity.
  */
-export const STORAGE_SCHEMA_VERSION = 6
+export const STORAGE_SCHEMA_VERSION = 7
 
-export const LEGACY_STORAGE_SCHEMA_VERSIONS = [1, 2, 3, 4, 5] as const
+export const LEGACY_STORAGE_SCHEMA_VERSIONS = [1, 2, 3, 4, 5, 6] as const
 
 export const STORAGE_KEY = 'watersort.campaign.v1'
 
-/** In-progress mid-level snapshot for undo-capable restore. */
+/**
+ * In-progress mid-level snapshot for undo-capable restore.
+ * initialBoard is always the ORIGINAL generated campaign board (identity freeze).
+ * Extra tube lives in help + currentBoard / moveHistory tube counts.
+ */
 export interface PersistedLevelSession {
 	levelNumber: number
 	seed: string
@@ -41,6 +50,7 @@ export interface PersistedLevelSession {
 	moveHistory: Board[]
 	moveCount: number
 	attempt?: AttemptFlags
+	help: PuzzleHelpState
 }
 
 export interface PersistedGameState {
@@ -55,6 +65,8 @@ export interface PersistedGameState {
 	achievements: AchievementState
 	freePlay: PersistedFreePlayState
 	daily: PersistedDailyState
+	/** One-time Free Play discoverability prompt has been shown. */
+	freePlayDiscoveryShown: boolean
 }
 
 export function createDefaultPersistedState(): PersistedGameState {
@@ -70,5 +82,8 @@ export function createDefaultPersistedState(): PersistedGameState {
 		achievements: createEmptyAchievementState(),
 		freePlay: createEmptyFreePlayState(),
 		daily: createEmptyDailyState(),
+		freePlayDiscoveryShown: false,
 	}
 }
+
+export { createInitialPuzzleHelpState }

@@ -1,5 +1,6 @@
 import { isValidBoard } from '../game/core'
 import type { Board } from '../game/types'
+import { parsePuzzleHelpState } from '../help'
 import { parseAttemptFlags } from '../statistics'
 import { FREE_PLAY_DIFFICULTIES, type FreePlayDifficulty } from './config'
 import {
@@ -59,9 +60,11 @@ export function parseFreePlaySession(
 		initialBoard: cloneBoard(record.initialBoard),
 		currentBoard: cloneBoard(record.currentBoard),
 		moveHistory: record.moveHistory.map(cloneBoard),
-		moveCount: Math.floor(record.moveCount),
 		attempt: parseAttemptFlags(record.attempt),
+		moveCount: Math.floor(record.moveCount),
 		isSolved: record.isSolved === true,
+		// Corrupt/missing help → defaults; do not invent prior rewarded grants.
+		help: parsePuzzleHelpState(record.help),
 	}
 }
 

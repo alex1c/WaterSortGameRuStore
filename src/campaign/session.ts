@@ -2,11 +2,11 @@ import {
 	applyMove,
 	canPour,
 	cloneBoard,
-	getHint,
 	isSolved,
 	type Board,
 	type Move,
 } from '../game'
+import { findHintMove } from '../help'
 
 /** Pure mid-level session state used by tests and the React hook. */
 export interface PlaySession {
@@ -119,11 +119,9 @@ export function requestHint(session: PlaySession): {
 	if (session.isSolved) {
 		return { session, move: null }
 	}
-	const move = getHint(session.currentBoard, {
-		maxStates: 250_000,
-		maxDepth: 250,
-		timeoutMs: 4_000,
-	})
+	// Shared PH10 strategy (fast + optional strong pass); keep sync API for tests.
+	const result = findHintMove(session.currentBoard)
+	const move = result.move
 	if (!move) {
 		return {
 			session: { ...session, hintMove: null },
